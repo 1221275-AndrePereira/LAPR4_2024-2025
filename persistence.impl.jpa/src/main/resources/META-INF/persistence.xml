@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1"
+             xmlns="http://xmlns.jcp.org/xml/ns/persistence">
+
+  <persistence-unit name="eapli.shodrone">
+
+    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+    <!--|Drone|-->
+    <class>eapli.shodrone.drone.domain.Drone</class>
+
+    <!--|DroneModel|-->
+    <class>eapli.shodrone.droneModel.domain.DroneModel</class>
+
+    <!--|ShodroneUser|-->
+    <class>eapli.shodrone.shodroneusermanagement.domain.ShodroneUser</class>
+    <class>eapli.shodrone.customerRepresentative.domain.CustomerRepresentative</class>
+
+    <!--|Figure|-->
+    <class>eapli.shodrone.figure.domain.Figure</class>
+    <class>eapli.shodrone.figure.domain.Version</class>
+
+    <!--|FigureCategory|-->
+    <class>eapli.shodrone.figurecategory.domain.FigureCategory</class>
+
+    <!--|ShowRequest|-->
+    <class>eapli.shodrone.showrequest.domain.ShowRequest</class>
+
+    <!--|ShowProposal|-->
+    <class>eapli.shodrone.showProposal.domain.ShowProposal</class>
+    <class>eapli.shodrone.showProposal.domain.proposalFields.ProposalFigure</class>
+    <class>eapli.shodrone.showProposal.domain.proposalDrone.DroneTypeSetting</class>
+    <class>eapli.shodrone.showProposal.domain.proposalDrone.ProposalDroneModel</class>
+    <class>eapli.shodrone.showProposal.domain.simulationReport.SimulationReport</class>
+
+    <!--|MaintenanceType|-->
+    <class>eapli.shodrone.maintenanceType.domain.MaintenanceType</class>
+
+    <!--|ProposalTemplate|-->
+    <class>eapli.shodrone.proposalDocumentTemplate.domain.ProposalDocumentTemplate</class>
+
+    <!--|RepositoryFactory|-->
+    <class>eapli.shodrone.infrastructure.persistence.PersistenceContext</class>
+    <class>eapli.shodrone.infrastructure.persistence.RepositoryFactory</class>
+
+    <!--|Framework|SystemUser|-->
+    <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
+    <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
+
+    <properties>
+      <property name="jakarta.persistence.lock.timeout" value="5000"/>
+
+      <!--|H2:DB|-->
+<!--      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:./db_sempi4;DB_CLOSE_DELAY=-1"/>-->
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:./db_sempi4;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE"/>
+      <!--property name="jakarta.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/base"/>-->
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value="1234"/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+
+      <!--|Show "Hibernate" messages in the console|-->
+      <property name="hibernate.show_sql" value="false"/>
+      <!--|Pretty "Hibernate" messages in the console|-->
+      <property name="hibernate.format_sql" value="true"/>
+      <!--|Use SQL comments to show the entity name in the console|-->
+      <property name="hibernate.use_sql_comments" value="true"/>
+
+
+      <!--|Auto scheme generation|-->
+      <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+
+    </properties>
+
+  </persistence-unit>
+
+</persistence>

@@ -1,0 +1,51 @@
+@startuml
+autonumber
+
+actor "CRM Collaborator" as User
+participant ":AddDronesToProposalUI" as UI
+participant "controller:AddDroneToProposalController" as Controller
+participant "proposalRepo:ShowProposalRepository" as ProposalRepo
+participant "droneModelRepo:DroneModelRepository" as DroneModelRepo
+participant "proposal:ShowProposal" as Proposal
+
+activate User
+User -> UI : Starts the process
+activate UI
+
+UI -> Controller : getProposals()
+activate Controller
+Controller -> ProposalRepo : findAll()
+Controller --> UI : proposals list
+deactivate Controller
+
+UI --> User : Shows proposals, user selects one
+User -> UI : Selects proposal
+
+UI -> Controller : getDroneModels()
+activate Controller
+Controller -> DroneModelRepo : findAll()
+Controller --> UI : drone models list
+deactivate Controller
+
+UI --> User : Shows models, user selects models and quantities
+User -> UI : Provides selections
+
+UI -> Controller : addDroneModelsToProposal(proposal, selectedModels, quantities)
+activate Controller
+
+Controller -> Proposal : addDroneModel(droneModel, quantity)
+activate Proposal
+' Logic to create and add ProposalDroneModel objects
+deactivate Proposal
+
+Controller -> ProposalRepo : save(proposal)
+activate ProposalRepo
+deactivate ProposalRepo
+
+Controller --> UI : returns success
+deactivate Controller
+
+UI --> User : Displays success message
+deactivate UI
+
+@enduml

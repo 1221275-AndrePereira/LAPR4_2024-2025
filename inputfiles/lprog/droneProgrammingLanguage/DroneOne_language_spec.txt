@@ -1,0 +1,14 @@
+DroneOne
+Position aPosition = (0, 1, 1.5);
+Vector aDirection = (0,0,1);
+LinearVelocity aVelocity = 6.2;
+AngularVelocity rotVelocity = 0.314;
+
+takeOff(10, 5);
+land(3);
+move((10, 10, 10), 5);
+movePath((0, 0, 0), (0, 0, 20), 5);
+hoover(1000);
+lightsOn();
+lightsOff();
+blink(500);

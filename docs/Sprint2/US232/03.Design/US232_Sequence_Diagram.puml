@@ -1,0 +1,67 @@
+@startuml
+autonumber
+actor "User" as User
+
+participant ":ListActiveFiguresUI" as UI
+participant ":ListFigureController" as Ctrl
+participant ":FigureRepository" as FigRepo
+participant "figures:List<Figure>" as FiguresList
+
+
+participant "console:Console" as ConsoleUtil
+
+activate User
+User -> UI : initiates list active figures
+activate UI
+
+UI -> Ctrl : listActiveFigures()
+activate Ctrl
+    Ctrl -> FigRepo : allActiveFigures()
+    activate FigRepo
+    FigRepo --> Ctrl : activeFigures:List<Figure>
+    deactivate FigRepo
+Ctrl --> UI : figures:List<Figure>
+deactivate Ctrl
+
+create FiguresList
+UI -> FiguresList : new(figures)
+UI --> User : displayFigures(FiguresList)
+
+loop while User wishes to interact
+
+    UI --> User : displayOptions ("Decommission", "Search/Reset", "Exit")
+    User -> UI : selectsOption(option)
+
+    else option is "Search by description/keyword"
+        UI -> ConsoleUtil : readLine("Enter search term:")
+        activate ConsoleUtil
+        ConsoleUtil --> UI : searchTerm:String
+        deactivate ConsoleUtil
+        UI -> UI : filterFiguresLocally(FiguresList, searchTerm)
+        UI --> User : displayFigures(filteredFiguresList)
+        UI -> UI : setSearchedFlag(true)
+
+    else option is "Reset List" (assuming searchedFlag is true)
+        UI -> Ctrl : listActiveFigures()
+        activate Ctrl
+            Ctrl -> FigRepo : allActiveFigures()
+            activate FigRepo
+            FigRepo --> Ctrl : activeFigures:List<Figure>
+            deactivate FigRepo
+        Ctrl --> UI : figures:List<Figure>
+        deactivate Ctrl
+        UI -> FiguresList : update(figures)
+        UI --> User : displayFigures(FiguresList)
+        UI -> UI : setSearchedFlag(false)
+
+    else option is "Exit"
+        UI --> User : exiting list figures view
+        break
+
+    end
+end
+
+deactivate UI
+deactivate User
+
+@enduml

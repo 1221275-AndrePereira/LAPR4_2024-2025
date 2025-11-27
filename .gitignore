@@ -1,0 +1,22 @@
+# Ignore all target/ folders in all modules
+**/target/
+
+# IntelliJ IDEA project files
+*.iml
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Local DB files
+*.mv.db
+*.trace.db
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Shell script backup/swap files
+*~
+*.swp

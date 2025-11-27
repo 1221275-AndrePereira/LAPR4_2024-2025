@@ -1,0 +1,48 @@
+@startuml
+actor Administrator as Admin
+participant ":ListUsersUI" as UI
+participant "controller:\nListSystemUsersController" as ListCtrl
+participant "userSvc:\nUserManagementService" as UserSvc
+participant "userRepo:\nUserRepository" as UserRepo
+participant "printer:\nSystemUserPrinter" as Printer
+collections "systemUsers:\nIterable<SystemUser>" as UsersCollection
+
+activate Admin
+
+Admin -> UI : Initiates List Users
+activate UI
+
+UI -> ListCtrl : allUsers()
+activate ListCtrl
+
+ListCtrl -> UserSvc : allUsers()
+activate UserSvc
+
+UserSvc -> UserRepo : findAll()
+activate UserRepo
+
+UserRepo --> UserSvc : returns systemUsers
+deactivate UserRepo
+
+UserSvc --> ListCtrl : returns systemUsers
+deactivate UserSvc
+
+ListCtrl --> UI : returns systemUsers
+deactivate ListCtrl
+
+UI -> UsersCollection : <<create>> (from iterable)
+
+loop for each user in systemUsers
+    UI -> Printer : visit(user)
+    activate Printer
+
+    Printer --> UI : returns formattedUserDetails
+    deactivate Printer
+
+    UI -> Admin : Displays formattedUserDetails
+end
+
+deactivate UI
+
+deactivate Admin
+@enduml

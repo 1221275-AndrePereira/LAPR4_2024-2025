@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>eapli</groupId>
+        <artifactId>shodrone</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <groupId>eapli.shodrone</groupId>
+    <artifactId>daemon.proposal</artifactId>
+    <packaging>jar</packaging>
+
+    <name>shodrone.daemon.proposal</name>
+
+    <properties>
+<!--        <project.mainclass>shodrone.daemon.proposal.ShodroneDaemon</project.mainclass>-->
+
+        <!-- Overriding the Java version for this module only -->
+<!--        <maven.compiler.source>21</maven.compiler.source>-->
+<!--        <maven.compiler.target>21</maven.compiler.target>-->
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>eapli.shodrone</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>eapli.shodrone</groupId>
+            <artifactId>persistence.impl.jpa</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>eapli.shodrone</groupId>
+            <artifactId>infrastructure.application</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+    </dependencies>
+</project>

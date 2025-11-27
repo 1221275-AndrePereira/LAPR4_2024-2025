@@ -1,0 +1,84 @@
+@startuml
+
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+skinparam classAttributeIconSize 0
+
+hide empty members
+
+package "UI Layer (Backoffice Console)" <<Presentation>> {
+    class DeactivateUserUI {
+        - theController: DeactivateSystemUserController
+        --
+        # doShow()
+    }
+    class ActivateUserUI <<Hypothetical>> {
+        - theController: ActivateSystemUserController
+        --
+        # doShow()
+    }
+}
+
+package "Application Layer" <<Application>> {
+    class DeactivateActiveSystemUserController {
+      - authz: AuthorizationService
+      - userSvc: UserManagementService
+      --
+      + activateUser(user: SystemUser): SystemUser
+      + deactivateUser(user: SystemUser): SystemUser
+      + activeUsers(): Iterable<SystemUser>
+      + inactiveUsers(): Iterable<SystemUser>
+
+    }
+}
+
+package "Domain Layer (Framework Core)" <<Domain>> {
+  class SystemUser <<Framework Entity>> {
+    - username: Username
+    - password: Password
+    - name: Name
+    - email: EmailAddress
+    - roles: Set<Role>
+    - active: boolean
+    - createdOn: Calendar
+    - deactivatedOn: Calendar
+    --
+    + isActive(): boolean
+    + activate(): boolean
+    + deactivate(): boolean
+  }
+
+  interface UserManagementService <<Framework Service>> {
+    + deactivateUser(user: SystemUser): SystemUser
+    + activateUser(user: SystemUser): SystemUser
+    + activeUsers(): Iterable<SystemUser>
+    + inactiveUsers(): Iterable<SystemUser>
+    + allUsers(): Iterable<SystemUser>
+    + save(user: SystemUser): SystemUser
+  }
+
+  interface UserRepository <<Framework Repository>> {
+    + save(user: SystemUser): SystemUser
+    + findByUsername(username: Username): Optional<SystemUser>
+    + findAllActive(): Iterable<SystemUser>
+    + findAllInactive(): Iterable<SystemUser>
+  }
+}
+
+package "Shodrone User Domain (Context)" <<Domain>> {
+    class ShodroneUser <<AggregateRoot>> {
+        - systemUser: SystemUser
+    }
+}
+
+DeactivateUserUI ..> DeactivateActiveSystemUserController
+ActivateUserUI ..> DeactivateActiveSystemUserController
+
+DeactivateActiveSystemUserController --> UserManagementService : uses >
+
+UserManagementService --> UserRepository : uses >
+UserManagementService ..> SystemUser : manages >
+
+ShodroneUser "1" -- "1" SystemUser : associated with >
+
+@enduml

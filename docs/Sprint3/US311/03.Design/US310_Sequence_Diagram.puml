@@ -1,0 +1,164 @@
+@startuml
+
+title <size:20>Sequence Diagram US310: Create Show Proposal</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor "CRM Collaborator" as Actor
+participant ":CreateShowProposalUI" as UI <<presentation>>
+participant ":ListShowRequestsController" as ListShowReqCtrl <<application>>
+participant ":ListProposalTemplatesController" as ListTemplatesCtrl <<application>>
+participant ":CreateShowProposalController" as CreatePropCtrl <<application>>
+participant "PersistenceContext" as PC <<static>>
+participant "RepositoryFactory" as RF <<framework>>
+participant "ShowRequestRepository" as ShowReqRepo <<repository>>
+participant "ProposalTemplateRepository" as TemplateRepo <<repository>>
+participant "ShowProposalRepository" as ShowPropRepo <<repository>>
+participant "ShowRequest" as ShowRequestEntity <<domain>>
+participant "ProposalTemplate" as TemplateEntity <<domain>>
+participant "ShowProposal" as ShowProposalEntity <<domain>>
+participant "TotalDrones" as TotalDronesVO <<domain>>
+participant "CreationDate" as CreationDateVO <<domain>>
+participant "SystemUser" as UserEntity <<domain>>
+
+activate Actor
+Actor -> UI: Asks to create a new show proposal
+activate UI
+
+    ' Controller Initialization
+    UI -[#blue]> ListShowReqCtrl: <<create>>
+    activate ListShowReqCtrl
+        ListShowReqCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> ListShowReqCtrl: repositoryFactory
+        deactivate PC
+        ListShowReqCtrl -[#blue]> RF: showRequestCatalogue()
+        activate RF
+        RF -[#blue]> ShowReqRepo: <<create>>
+        RF --[#blue]> ListShowReqCtrl: showRequestRepository
+        deactivate RF
+    deactivate ListShowReqCtrl
+
+    UI -[#blue]> ListTemplatesCtrl: <<create>>
+    activate ListTemplatesCtrl
+        ListTemplatesCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> ListTemplatesCtrl: repositoryFactory
+        deactivate PC
+        ListTemplatesCtrl -[#blue]> RF: proposalTemplateRepository()
+        activate RF
+        RF -[#blue]> TemplateRepo: <<create>>
+        RF --[#blue]> ListTemplatesCtrl: proposalTemplateRepository
+        deactivate RF
+    deactivate ListTemplatesCtrl
+
+    UI -[#blue]> CreatePropCtrl: <<create>>
+    activate CreatePropCtrl
+        CreatePropCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> CreatePropCtrl: repositoryFactory
+        deactivate PC
+        CreatePropCtrl -[#blue]> RF: showProposalRepository()
+        activate RF
+        RF -[#blue]> ShowPropRepo: <<create>>
+        RF --[#blue]> CreatePropCtrl: showProposalRepository
+        deactivate RF
+        ' Also needs ShowRequestRepo and TemplateRepo, assume obtained similarly or passed if needed
+        CreatePropCtrl -[#blue]> RF: showRequestCatalogue()
+        activate RF
+        RF --[#blue]> CreatePropCtrl: showRequestRepository
+        deactivate RF
+        CreatePropCtrl -[#blue]> RF: proposalTemplateRepository()
+        activate RF
+        RF --[#blue]> CreatePropCtrl: proposalTemplateRepository
+        deactivate RF
+    deactivate CreatePropCtrl
+    ' End Controller Initialization
+
+    ' Step 1: Select Show Request
+    UI -> ListShowReqCtrl: listShowRequests()
+    activate ListShowReqCtrl
+    ListShowReqCtrl -> ShowReqRepo: findProposable()
+    activate ShowReqRepo
+    ShowReqRepo --> ListShowReqCtrl: allShowRequests (Iterable<ShowRequest>)
+    deactivate ShowReqRepo
+    ListShowReqCtrl --> UI: allShowRequests
+    deactivate ListShowReqCtrl
+
+    UI --> Actor: Shows list of Show Requests for selection
+    Actor -> UI: Selects a Show Request (selectedShowRequestDTO)
+
+    ' Step 2: Select Proposal Template
+    UI -> ListTemplatesCtrl: listProposalTemplates()
+    activate ListTemplatesCtrl
+    ListTemplatesCtrl -> TemplateRepo: findAllActive()
+    activate TemplateRepo
+    TemplateRepo --> ListTemplatesCtrl: allTemplates (Iterable<ProposalTemplate>)
+    deactivate TemplateRepo
+    ListTemplatesCtrl --> UI: allTemplates
+    deactivate ListTemplatesCtrl
+
+    UI --> Actor: Shows list of Proposal Templates for selection
+    Actor -> UI: Selects a Proposal Template (selectedTemplateDTO)
+
+    ' Step 3: Gather other Proposal Details
+    UI --> Actor: Ask for Total Number of Drones
+    Actor -> UI: Provides total number of drones (totalDronesInt)
+
+    ' Step 4: Create Show Proposal
+    UI -> CreatePropCtrl: createShowProposal(selectedShowRequestDTO, totalDronesInt, selectedTemplateDTO)
+    activate CreatePropCtrl
+        ' Controller retrieves the full ShowRequest entity
+        CreatePropCtrl -> ShowReqRepo: findById(selectedShowRequestDTO.id())
+        activate ShowReqRepo
+        ShowReqRepo --> CreatePropCtrl: showRequestEntity
+        deactivate ShowReqRepo
+
+        ' Controller retrieves the full ProposalTemplate entity
+        CreatePropCtrl -> TemplateRepo: findById(selectedTemplateDTO.id())
+        activate TemplateRepo
+        TemplateRepo --> CreatePropCtrl: templateEntity
+        deactivate TemplateRepo
+
+        ' Controller gets current authenticated user (Author)
+        CreatePropCtrl -> CreatePropCtrl: getAuthenticatedUser()
+        CreatePropCtrl --> CreatePropCtrl: authorUser (SystemUser)
+
+        ' Create Value Objects
+        CreatePropCtrl -> TotalDronesVO: valueOf(totalDronesInt)
+        activate TotalDronesVO
+        TotalDronesVO --> CreatePropCtrl: totalDronesValueObject
+        deactivate TotalDronesVO
+
+        CreatePropCtrl -> CreationDateVO: valueOf(Calendar.getInstance())
+        activate CreationDateVO
+        CreationDateVO --> CreatePropCtrl: creationDateValueObject
+        deactivate CreationDateVO
+
+        ' Create ShowProposal domain entity
+        CreatePropCtrl -> ShowProposalEntity: <<create>> (showRequestEntity, totalDronesValueObject, \n templateEntity, authorUser, creationDateValueObject)
+        activate ShowProposalEntity
+        ShowProposalEntity --> CreatePropCtrl: newShowProposal
+        deactivate ShowProposalEntity
+
+        ' Save the ShowProposal
+        CreatePropCtrl -> ShowPropRepo: save(newShowProposal)
+        activate ShowPropRepo
+        ShowPropRepo --> CreatePropCtrl: savedShowProposal
+        deactivate ShowPropRepo
+
+        ' Optionally, update ShowRequest status
+        ' CreatePropCtrl -> showRequestEntity: setStatus("Proposal In Progress")
+        ' CreatePropCtrl -> ShowReqRepo: save(showRequestEntity)
+
+    CreatePropCtrl --> UI: savedShowProposal
+    deactivate CreatePropCtrl
+
+    UI --> Actor: Success message and displays created Show Proposal (or its ID) / Failure message
+deactivate UI
+deactivate Actor
+
+@enduml

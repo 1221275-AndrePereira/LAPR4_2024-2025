@@ -1,0 +1,80 @@
+@startuml
+autonumber
+
+actor "CRM Collaborator" as User
+
+participant ":GenerateProgramsUI" as UI
+participant "controller:GenerateProgramsController" as Controller
+participant "repository:ShowProposalRepository" as Repo
+participant "showProposal:ShowProposal" as Proposal
+participant "generator:DroneProgramGenerator" as Generator
+participant "proposalFigure:ProposalFigure" as Figure
+participant "droneModel:ProposalDroneModel" as DroneModel
+participant "typeSetting:DroneTypeSetting" as TypeSetting
+participant "instructions:DroneInstructions" as Instructions
+
+activate User
+User -> UI : Executes doShow()
+activate UI
+
+UI -> Controller : generatePrograms(proposalId)
+activate Controller
+
+Controller -> Repo : findByIdentifier(proposalId)
+activate Repo
+Repo --> Controller : Optional<ShowProposal>
+deactivate Repo
+
+Controller -> Proposal : get()
+activate Proposal
+Proposal --> Controller : showProposal
+deactivate Proposal
+
+Controller -> Proposal : getDroneModels()
+Controller -> Proposal : getFigures()
+Controller -> Proposal : getStatus()
+
+Controller -> Generator** : create()
+
+loop for each proposalFigure in proposalFigures
+    Controller -> Generator : makePaths(proposalFigure, models)
+    activate Generator
+    Generator --> Controller : langFilePath: Map<String, String>
+    deactivate Generator
+
+    loop for each droneModel in models
+        Controller -> Generator : generateAndValidate(dslPath, instructionsPath, languageName)
+        activate Generator
+        Generator --> Controller : true
+        deactivate Generator
+
+        Controller -> Instructions** : valueOf(instructionsPath)
+        activate Instructions
+        Instructions --> Controller : instructions
+        deactivate Instructions
+
+        Controller -> TypeSetting** : create(droneModel, instructions)
+        activate TypeSetting
+        TypeSetting --> Controller : typeSetting
+        deactivate TypeSetting
+
+        Controller -> Figure : addTypeSetting(typeSetting)
+        activate Figure
+        deactivate Figure
+    end
+end
+
+Controller -> Proposal : updateStatus()
+activate Proposal
+deactivate Proposal
+
+Controller -> Repo : save(showProposal)
+activate Repo
+deactivate Repo
+
+Controller --> UI :
+deactivate Controller
+UI --> User :
+deactivate UI
+
+@enduml

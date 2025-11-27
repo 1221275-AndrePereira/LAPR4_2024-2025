@@ -1,0 +1,51 @@
+@startuml
+
+title <size:20>Sequence Diagram US248</size>
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor ShowDesigner as Actor
+participant ":AlterFigureCategoryStatusUI" as UI <<presentation>>
+participant ":AlterFigureCategoryStatusController" as Controller <<application>>
+participant ":FigureCategory" as Domain <<domain>>
+participant ":FigureCategoryCatalogue" as FigureCategoryCatalogue <<repository>>
+activate Actor
+Actor -> UI: Asks to change the status of a figure category
+activate UI
+    UI -> Controller**: create
+    activate Controller
+
+    UI --> Actor: Ask the name of the figure category that will have \nit's status changed
+    Actor -> UI: Types name of the figure category
+
+
+
+    UI -> Controller: alterFigureCategoryStatus(name)
+        Controller -> FigureCategoryCatalogue: searchFigureCategoryByName(name)
+
+
+    activate FigureCategoryCatalogue
+    FigureCategoryCatalogue-->Controller: figureCategory
+    deactivate FigureCategoryCatalogue
+
+
+    Controller -> Domain: updateStatus()
+    activate Domain
+            deactivate Domain
+
+
+Controller -> FigureCategoryCatalogue: save(updatedFigureCategory)
+        activate FigureCategoryCatalogue
+        FigureCategoryCatalogue --> Controller: updatedFigureCategory
+        deactivate FigureCategoryCatalogue
+    Controller --> UI: updatedFigureCategory
+    deactivate Controller
+
+        UI-->Actor: Sucess message
+deactivate UI
+deactivate Actor
+@enduml

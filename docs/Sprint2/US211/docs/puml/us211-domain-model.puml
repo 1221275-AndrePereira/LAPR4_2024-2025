@@ -1,0 +1,170 @@
+@startuml
+hide empty members
+
+' === SYSTEM LEVEL USER MANAGEMENT ===
+package "User Management (System Level)" {
+
+    class SystemUser <<Framework Entity>> {
+        - username: Username
+        - password: Password
+        - name: Name (firstName, lastName)
+        - email: EmailAddress
+        - roles: Set<Role>
+        - createdOn: Calendar
+        - active: boolean
+        --
+        + addUser(username, password, firstName, lastName, email, roles)
+        + ensureAuthenticatedUserHasAnyOf(roles)
+    }
+
+    class Role <<Framework ValueObject>> {
+        + valueOf(String): Role
+    }
+
+    interface UserManagementService <<Framework Service>> {
+        + registerNewUser(username, password, firstName, lastName, email, roles, createdOn): SystemUser
+    }
+
+    class AddSystemUserController {
+        - authz: AuthorizationService
+        - userSvc: UserManagementService
+        --
+        + addUser(username, password, firstName, lastName, email, roles): SystemUser
+        + getRoleTypesAdmin(): Iterable<Role>
+        + getRoleTypesNonAdmin(): Iterable<Role>
+    }
+}
+
+' === SHODRONE-SPECIFIC USER MANAGEMENT ===
+package "Shodrone User Management (Application Specific)" {
+
+    class ShodroneUser <<AggregateRoot>> {
+        - vatNumber: VATNumber <<ID>>
+        - phoneNumber: PhoneNumber
+        - address: Address
+        - systemUser: SystemUser
+        - customerRepresentatives: List<CustomerRepresentative>
+        --
+        + ShodroneUser(systemUser, phoneNumber, vatNumber, address, customerRepresentatives)
+        + systemUser(): SystemUser
+        + vatNumber(): VATNumber
+        + phoneNumber(): PhoneNumber
+        + address(): Address
+        + customerRepresentatives(): List<CustomerRepresentative>
+    }
+
+    class AddShodroneUserController {
+        - userSvc: UserManagementService
+        - shodroneUserRepository: ShodroneUserRepository
+        --
+        + signup(username, password, firstName, lastName, email,
+                 vatNumberInput, streetAddress, postalCode, city,
+                 phoneNumberInput, createdOn, roles): ShodroneUser
+    }
+
+    class VATNumber <<ValueObject>> {
+        - vatNumber: String
+        --
+        + valueOf(String): VATNumber
+    }
+
+    class PhoneNumber <<ValueObject>> {
+        - phoneNumber: String
+        --
+        + valueOf(String): PhoneNumber
+    }
+
+    class Address <<ValueObject>> {
+        - streetAddress: String
+        - postalCode: String
+        - city: String
+        --
+        + valueOf(streetAddress, postalCode, city): Address
+    }
+}
+
+' === CUSTOMER REPRESENTATIVE MANAGEMENT ===
+package "Customer Representative Management" {
+
+    class CustomerRepresentative <<Entity>> {
+        - id: Long <<ID>>
+        - systemUser: SystemUser
+        - phoneNumber: PhoneNumber
+        - companyEmail: CompanyEmail
+        --
+        + CustomerRepresentative(systemUser, phoneNumber, companyEmail)
+    }
+
+    class CompanyEmail <<ValueObject>> {
+        - companyEmail: String
+        --
+        + valueOf(String): CompanyEmail
+    }
+
+    class CustomerRepresentativeDefaultValues {
+        --
+        + {static} buildRepresentativeDetails(
+            customerUsername, customerFirstName, customerLastName
+          ): SystemUserDetailsForRepresentative
+    }
+
+    class SystemUserDetailsForRepresentative <<DTO>> {
+        + username: String
+        + password: String
+        + firstName: String
+        + lastName: String
+        + systemEmail: String
+        + representativePhoneNumber: String
+        + representativeCompanyEmail: String
+    }
+}
+
+' === UI LAYER (BACKOFFICE) ===
+package "UI Layer (Backoffice Console)" {
+
+    class AddUserAdminUI {
+        - theController: AddSystemUserController
+        - addShodroneUserController: AddShodroneUserController
+        --
+        + doShow()
+    }
+
+    class AddUserManagerUI {
+        - theController: AddSystemUserController
+        - addShodroneUserController: AddShodroneUserController
+        --
+        + doShow()
+    }
+}
+
+' === RELATIONSHIPS ===
+
+' System User Relations
+SystemUser                         "1"   -- "1..*" Role                        : has
+
+' Controllers & Services
+AddSystemUserController            -up->   UserManagementService                : uses >
+AddShodroneUserController          -->   UserManagementService                : uses >
+
+' ShodroneUser and Components
+ShodroneUser                       "1"   -- "1"    SystemUser                  : composed of >
+ShodroneUser                       "1"   -- "1"    VATNumber                   : identified by >
+ShodroneUser                       "1"   -- "1"    PhoneNumber                 : has >
+ShodroneUser                       "1"   -- "1"    Address                     : has >
+ShodroneUser                       "1"   -- "0..*" CustomerRepresentative     : has >
+
+' CustomerRepresentative links
+CustomerRepresentative             "1"   -- "1" SystemUser                    : composed of >
+CustomerRepresentative             "1"   -- "1" PhoneNumber                   : has >
+CustomerRepresentative             "1"   -- "1" CompanyEmail                  : has >
+
+AddShodroneUserController          ..>   CustomerRepresentativeDefaultValues  : uses >
+CustomerRepresentativeDefaultValues ..> SystemUserDetailsForRepresentative   : creates >
+
+' UI interactions
+AddUserAdminUI                     ..>   AddSystemUserController              : uses >
+AddUserAdminUI                     ..>   AddShodroneUserController            : uses >
+AddUserManagerUI                   ..>   AddSystemUserController              : uses >
+AddUserManagerUI                   ..>   AddShodroneUserController            : uses >
+
+@enduml

@@ -1,0 +1,211 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+
+package "Figure " #88ee88{
+object Figure <<Entity>> <<Root>>{
+    -author:SystemUser
+    -creationDate:LocalDate
+    -isActive:boolean
+}
+
+object Keyword <<Value Object>>{
+    -keyword : String
+}
+
+object CodePath <<Value Object>>{
+    -path : String
+}
+
+
+object dslVersion <<Value Object>>{
+ -version: Version
+}
+
+object figureVersion <<Value Object>>{
+ -version: Version
+}
+
+object Description <<Value Object>>{
+    -description :String
+}
+}
+
+package "Figure Category" #bbffaa{
+object FigureCategory <<Entity>> <<Root>>{
+    -Description :String
+}
+
+object FigureCategoryName <<Value Object>>{
+    -Name :String
+}
+
+object FigureCategoryStatus <<Value Object>>{
+    -Status :String
+}
+
+object FigureCategoryCreationDate <<Value Object>>{
+    -Date :Date
+}
+
+object FigureCategoryLastdateDate <<Value Object>>{
+    -Date :Date
+}
+
+}
+
+
+package "Drone Model" #ffa3a3{
+object DroneModel <<Root>> <<Entity>>{
+ -Name :String
+}
+object DroneLanguage<<Value Object>>{
+    -Name :Enum
+}
+object WindToleranceProfile <<Value Object>> {
+    -MaxSafeOperatingWindSpeed :double
+}
+object WindToleranceStep <<Value Object>> {
+    -MinWindSpeed :double
+    -MaxWindSpeed :double
+    -DeviationInMeters :double
+}
+
+}
+
+package "Show Proposal" #9bc8ff{
+    object ShowProposal <<Entity>> <<Root>>{
+        -Description :String
+        -AcceptanceEmailContent :String
+        -creationDate :LocalDateTime
+        -AcceptanceDate :String
+        -DroneInventory :Map<DroneModel, NumberOfDrones>
+
+    }
+
+    object ProposalStatus <<Value Object>> {
+        -Status: Enum
+    }
+
+    object ProposalVideoLink <<Value Object>> {
+        -Link :String
+    }
+
+    object ProposedShowDate<<Value Object>>{
+        -date :LocaDateTime
+    }
+
+    object ProposedDuration<<Value Object>>{
+        -Duration :int
+    }
+
+    object ProposedNDrones<<Value Object>>{
+        -Number :int
+    }
+    object ProposedPlace<<Value Object>>{
+        -longitude: float
+        -latitude: float
+    }
+
+    object ProposalFigures <<Value Object>>{
+    }
+
+   object Insurance <<Value Object>> {
+       -Insurance :Int
+   }
+
+   object DroneTypeSettings <<Value Object>> {
+
+   }
+
+  object SimulationReport<<Entity>>{
+       -path :String
+       -creationDate :Date
+
+   }
+
+   object ReportPath{
+    path :String
+   }
+
+   object SimulationResult{
+    simulationResult : Enum
+   }
+
+   object DroneInstructions <<Value Object>> {
+        -PathToCode :String
+   }
+
+   object ProposalDronesModel <<Value Object>> {
+
+   }
+
+   object ProposalDocument<<Value Object>>{
+       -filePath :String
+   }
+}
+
+
+package "Proposal Document Template" #d0d0ff{
+object ProposalDocumentTemplate<<Aggregate Root>>{
+- name: String
+- filePath: String
+
+}
+
+}
+
+' --------------------- WITHIN AGGREGATE RELATIONS -------------------------------
+
+
+ShowProposal "1" --> "1" ProposalStatus :has
+ShowProposal "1" --> "1..*" ProposalDronesModel :has
+ShowProposal"1" --> "1" ProposedDuration :has
+ShowProposal"1" --> "1" ProposedPlace :has
+ShowProposal"1" --> "1" ProposedShowDate :has
+ShowProposal "1" --> "1" Insurance :has
+ShowProposal "1"-->"0..*" SimulationReport :has
+ShowProposal "1"-->"1..*" ProposalFigures : has
+SimulationReport "1" -left--> "1" ProposalVideoLink :has
+ShowProposal -up-> ProposalDocument :has
+DroneTypeSettings "1..*" <-up- "1" ProposalFigures :has
+DroneTypeSettings"1..*" -left-> "1" DroneInstructions :has
+DroneTypeSettings "1"-->"1" ProposalDronesModel : has
+ProposalDronesModel "1" -left-> "1" ProposedNDrones :has
+SimulationReport "1"-up->"0..1" SimulationResult :has
+SimulationReport "1"-up->"1" ReportPath: has
+
+
+FigureCategory "1" --> "1" FigureCategoryName :has
+FigureCategory "1" --> "1" FigureCategoryStatus :has
+FigureCategory "1" --> "1" FigureCategoryCreationDate :has
+FigureCategory "1" --> "1" FigureCategoryLastdateDate :has
+
+Figure "1"-->"1" figureVersion: has
+Figure "1"-->"1" dslVersion: has
+Figure "1"-->"1" CodePath: has
+Figure "1"-left->"1..*" Keyword: has
+Figure "1"--> "1" Description: has
+
+
+DroneModel "1"-->"1" DroneLanguage : has
+DroneModel "1" -down-> "1" WindToleranceProfile :has
+
+WindToleranceProfile "1"-->"1..*" WindToleranceStep :has
+
+
+
+'--------------------- AGGREGATES RELATIONS -----------------------
+
+
+ProposalFigures "0..*"-up->"1" Figure : contains
+
+Figure "0..*" -right-> "1" FigureCategory :belongs
+
+ProposalDronesModel "0..*" -right-> "1" DroneModel : contains
+
+
+
+ProposalDocument "1"-up->"1" ProposalDocumentTemplate : follows
+
+@enduml

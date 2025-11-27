@@ -1,0 +1,45 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+
+package "Show Proposal" #9bc8ff{
+object ShowProposal <<Entity>> <<Root>>{
+    -Description :String
+    -AcceptanceEmailContent :String
+    -AcceptanceDate :String
+}
+
+   object SimulationReport<<Entity>>{
+    -Result :String
+    -Description :String
+    -PreviewLink :String
+    -Date :Date
+    }
+
+    object ProposalCreationDate<<Value Object>>{
+        -Date :Date
+    }
+
+    object ProposedShowDate<<Value Object>>{
+        -Date :Date
+    }
+
+    object ProposedDuration<<Value Object>>{
+        -Duration :int
+    }
+
+    object ProposedNDrones<<Value Object>>{
+        -Number :int
+    }
+    object ProposedPlace<<Value Object>>{
+        -Place :String
+    }
+
+     object ProposalStatus<<Value Object>>{
+            -Status :String
+       }
+
+}
+
+@enduml

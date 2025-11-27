@@ -1,0 +1,54 @@
+@startuml
+
+title <size:20>Sequence Diagram US323</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor ShowDesigner as Actor
+participant ":EditMaintenanceTypeUI" as UI <<presentation>>
+participant ":MaintenanceTypeController" as Controller <<application>>
+participant ":MaintenanceType" as Domain <<domain>>
+participant MaintenanceTypeRepository <<repository>>
+
+activate Actor
+Actor -> UI: Requests to edit a maintenance type
+activate UI
+
+    UI -> Controller**: create
+    activate Controller
+
+    UI --> Actor: Ask for the id of the maintenance type to be edited \n and the new name of the maintenance type
+    Actor -> UI: Provides the id of the maintenance type and the new name
+
+    UI -> Controller: editFigureCategory(maintenanceTypeId, newName)
+        Controller -> MaintenanceTypeRepository: searchMaintenanceTypeById(maintenanceTypeId)
+        activate MaintenanceTypeRepository
+        MaintenanceTypeRepository --> Controller: maintenanceType
+        deactivate MaintenanceTypeRepository
+
+        Controller -> Domain: updateName(newName)
+        activate Domain
+        Domain --> Controller: updatedName
+       deactivate Domain
+
+        Controller -> MaintenanceTypeRepository: save(updatedMaintenanceType)
+        activate MaintenanceTypeRepository
+        MaintenanceTypeRepository --> Controller: updatedMaintenanceType
+        deactivate MaintenanceTypeRepository
+    Controller --> UI: updatedMaintenanceType
+    deactivate Controller
+
+    UI --> Actor: Success message
+
+deactivate UI
+deactivate Actor
+
+
+@enduml

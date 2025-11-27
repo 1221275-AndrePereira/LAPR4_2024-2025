@@ -1,0 +1,45 @@
+@startuml
+
+title <size:20>Sequence Diagram US240 - Drone Model Creation</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":CreateDroneModelUI" as UI <<presentation>>
+participant ":DroneModelController" as Controller <<application>>
+participant ":DroneModel" as Domain <<domain>>
+participant DroneModelRepository <<repository>>
+
+activate Actor
+Actor -> UI: Requests to create a drone model
+activate UI
+
+    UI -> Controller: create
+    activate Controller
+
+    UI --> Actor: Ask for drone model details (name, behavior under wind, etc.)
+    Actor -> UI: Provides drone model details
+
+    UI -> Controller: createDroneModel(details)
+        Controller -> Domain: new(details)
+        activate Domain
+        Domain --> Controller: newDroneModel
+        deactivate Domain
+
+        Controller -> DroneModelRepository: save(newDroneModel)
+        activate DroneModelRepository
+        DroneModelRepository --> Controller: savedDroneModel
+        deactivate DroneModelRepository
+
+    Controller --> UI: savedDroneModel
+    deactivate Controller
+
+    UI --> Actor: Success confirmation and details of created drone model
+
+deactivate UI
+deactivate Actor
+
+@enduml

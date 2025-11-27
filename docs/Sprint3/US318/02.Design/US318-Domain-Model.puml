@@ -1,0 +1,15 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+
+
+
+package "Proposal Document Template" #d0d0ff{
+object ProposalDocumentTemplate<<Aggregate Root>>{
+- name: String
+- filePath: String
+
+}
+
+@enduml

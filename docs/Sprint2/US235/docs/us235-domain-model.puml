@@ -1,0 +1,85 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+skinparam packageStyle rectangle
+hide empty members
+
+package "Customer" #fff37a {
+
+  object Customer <<Entity>> <<Root>> {
+    +id: Long
+    +version: Long
+    +CompanyName: String
+    '-- Relations --
+    '+customerStatus: CustomerStatus (implicit via relationship)
+    '+contactDetails: ContactDetails (implicit via relationship)
+    '+vatNumber: VATNumber (implicit via relationship)
+    '+representatives: CustomerRepresentative[*] (implicit via relationship)
+  }
+
+  object CustomerStatus <<ValueObject>> {
+    +Name: String ' e.g., Active, Inactive, Prospect
+  }
+
+  object ContactDetails <<ValueObject>> {
+    +Email: EmailAddress
+    +Phone: PhoneNumber
+    +PrimaryAddress: Address
+  }
+
+  object EmailAddress <<ValueObject>> {
+    +Value: String
+    ' Constraint: Must be a valid email format
+  }
+
+  object PhoneNumber <<ValueObject>> {
+    +Number: String
+    +Type: String ' e.g., Mobile, Work, Fax
+    ' Constraint: Must be a valid phone number format for the region/country
+  }
+
+  object Address <<ValueObject>> {
+    +StreetLine1: String
+    +StreetLine2: String
+    +City: String
+    +StateOrProvince: String
+    +PostalCode: String
+    +Country: String
+  }
+
+  object VATNumber <<ValueObject>> {
+    +Value: String
+    ' Constraint: Must be a valid VAT number format
+  }
+
+  object CustomerRepresentative <<Entity>> {
+    +id: Long
+    +version: Long
+    +FirstName: String
+    +LastName: String
+    +Position: String ' e.g., Project Manager, Sales Contact
+    '-- Relations --
+    '+status: RepresentativeStatus (implicit via relationship)
+    '+workEmail: EmailAddress (implicit via relationship)
+    '+contactNumbers: PhoneNumber[*] (implicit via relationship)
+  }
+
+  object RepresentativeStatus <<ValueObject>> {
+     +Name: String ' e.g., Active, Inactive, OnLeave
+  }
+
+  ' --- Relationships for Customer ---
+  Customer "1" *-- "1" CustomerStatus : has >
+  Customer "1" *-- "1" ContactDetails : has primary >
+  Customer "1" *-- "0..1" VATNumber : has > ' A customer might not have a VAT number
+
+  ' --- Relationships for CustomerRepresentative ---
+  Customer "1" -- "0..*" CustomerRepresentative : employs >
+  CustomerRepresentative "1" *-- "1" RepresentativeStatus : has >
+  CustomerRepresentative "1" *-- "1" EmailAddress : has work email >
+  CustomerRepresentative "1" *-- "0..*" PhoneNumber : has contact numbers >
+
+}
+
+@enduml

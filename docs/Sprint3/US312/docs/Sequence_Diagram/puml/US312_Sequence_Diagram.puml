@@ -1,0 +1,116 @@
+@startuml
+
+title <size:20>Sequence Diagram US310: Create Show Proposal</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor "CRM Collaborator" as User
+participant AddFiguresToProposalUI as UI
+    participant ListFigureController as LFC
+    participant FindShowRequestController as FSRC
+    participant AddFigureToProposalController as AFTPC
+    participant ShowProposal as SP
+    participant Figure as Fig
+    participant ProposalFigure as PF
+    participant ShodroneUser as SU
+    participant ShowRequest as SR
+    participant ShowProposalRepository as SPR
+
+activate User
+    User->>UI: new AddFiguresToProposalUI(showProposal)
+    activate UI
+    UI->>UI: doShow()
+    UI->>LFC: listActivePublicFigures()
+    activate LFC
+    LFC-->>UI: publicFigures
+    deactivate LFC
+    UI->>UI: retrieveUser()
+    activate UI
+    UI->>FSRC: findShowRequestByProposal(showProposal)
+    activate FSRC
+    FSRC-->>UI: optionalShowRequest
+    deactivate FSRC
+    alt showRequest is present
+        UI->>SR: getCustomer()
+        activate SR
+        SR-->>UI: shodroneUser
+        deactivate SR
+    else
+        UI-->>UI: log "Failed to retrieve belonging customer"
+    end
+    UI->>SP: getFigures()
+    activate SP
+    SP-->>UI: initialProposalFigures
+    deactivate SP
+    loop for each ProposalFigure in initialProposalFigures
+        UI->>PF: figure()
+        activate PF
+        PF-->>UI: figure
+        deactivate PF
+        UI-->>UI: adds figure to initialFigures
+    end
+    UI->>LFC: listExclusiveFigureOfUser(shodroneUser)
+    activate LFC
+    LFC-->>UI: exclusiveFigures
+    deactivate LFC
+    UI->>UI: printOrder(initialFigures, ...)
+    UI->>UI: initializes currentSelection with initialProposalFigures
+    UI->>UI: populates availableFigures (public + exclusive - currentSelection)
+
+    loop while !done (in doShow loop)
+        UI->>UI: printCurrentSelection(currentSelection, ...)
+        UI->>UI: showMenu()
+        User->>UI: choice (e.g., 1 for Add Figure)
+        alt choice == 1 (Add Figure)
+            UI->>UI: doAddFigure(availableFigures, currentSelection)
+            UI->>UI: selectFigure(availableFigures)
+            UI-->>User: displays available figures
+            User->>UI: selects a figure (index)
+            UI-->>UI: returns selected Figure
+            UI->>availableFigures: remove(selectedFigure)
+            UI->>currentSelection: add(selectedFigure)
+        else choice == 2 (Remove Figure)
+            UI->>UI: doRemoveFigure(availableFigures, currentSelection)
+            UI->>UI: selectFigure(currentSelection)
+            UI-->>User: displays current selection figures
+            User->>UI: selects a figure (index)
+            UI-->>UI: returns selected Figure
+            UI->>currentSelection: remove(selectedFigure)
+            UI->>availableFigures: add(selectedFigure)
+        else choice == 3 (Order Figures)
+            UI->>UI: orderFigures(currentSelection)
+            UI->>UI: printOrder(currentSelection, ...)
+            UI-->>User: prompts for order (e.g., (F1,F2,F1,F3,F2,F1))
+            User->>UI: enters order string
+            UI->>UI: validates order (regex, parsing)
+            UI->>UI: reorders figures in currentSelection
+        else choice == 0 (Define Order and Save)
+            opt if currentSelection is not empty
+                UI->>UI: orderFigures(currentSelection)
+                UI->>AFTPC: setAllFiguresForProposal(showProposal.identity(), currentSelection)
+                activate AFTPC
+                AFTPC->>SPR: findByIdentifier(showProposalId)
+                activate SPR
+                SPR-->>AFTPC: showProposal
+                deactivate SPR
+                AFTPC->>SP: updateFigures(newProposalFigures)
+                activate SP
+                SP-->>AFTPC:
+                deactivate SP
+                AFTPC->>SPR: save(showProposal)
+                activate SPR
+                SPR-->>AFTPC:
+                deactivate SPR
+                deactivate AFTPC
+                UI->>UI: printOrder(currentSelection, ...)
+            end
+            UI->>UI: done = true
+        end
+    end
+            UI -> User:displays confirmation of saved order
+    deactivate UI
+
+@enduml

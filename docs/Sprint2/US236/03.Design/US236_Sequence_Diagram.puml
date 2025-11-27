@@ -1,0 +1,175 @@
+@startuml
+
+title <size:20>Sequence Diagram US236: Edit Show Request</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "CRM_Collaborator" as Actor
+participant ":EditShowRequestUI" as UI <<presentation>>
+participant ":FindShowRequestController" as FindCtrl <<application>>
+participant ":ListShodroneUsersController" as ListUsersCtrl <<application>>
+participant ":EditShowRequestController" as EditCtrl <<application>>
+participant "ShowRequest" as ShowRequestEntity <<domain>>
+participant "PersistenceContext" as PC <<static>>
+participant "RepositoryFactory" as RF <<framework>>
+participant "ShowRequestRepository" as ShowReqRepo <<repository>>
+participant "UserRepository" as UserRepo <<repository>>
+participant "Description" as DescVO <<domain>>
+participant "RequestPlace" as PlaceVO <<domain>>
+participant "RequestShowDate" as ShowDateVO <<domain>>
+participant "RequestDuration" as DurationVO <<domain>>
+participant "RequestNDrones" as NDronesVO <<domain>>
+
+activate Actor
+Actor -> UI: Asks to edit a show request
+activate UI
+
+    ' Controller Initializations (simplified for brevity, happens on UI creation)
+    UI -[#blue]> FindCtrl: <<create>>
+    activate FindCtrl
+      FindCtrl -[#blue]> PC: repositories()
+      activate PC
+      PC --[#blue]> FindCtrl: repoFactory
+      deactivate PC
+      FindCtrl -[#blue]> RF: showRequestCatalogue()
+      activate RF
+      RF --[#blue]> FindCtrl: showRequestRepository
+      deactivate RF
+    deactivate FindCtrl
+
+    UI -[#blue]> EditCtrl: <<create>>
+    activate EditCtrl
+      EditCtrl -[#blue]> PC: repositories()
+      activate PC
+      PC --[#blue]> EditCtrl: repoFactory
+      deactivate PC
+      EditCtrl -[#blue]> RF: showRequestCatalogue()
+      activate RF
+      RF --[#blue]> EditCtrl: showRequestRepository
+      deactivate RF
+    deactivate EditCtrl
+
+    UI -[#blue]> ListUsersCtrl: <<create>> ' If customer change is possible
+    activate ListUsersCtrl
+      ' ListUsersCtrl gets its UserRepository similarly
+    deactivate ListUsersCtrl
+    ' End Controller Initializations
+
+    UI --> Actor: Asks for the Show Request ID to edit
+    Actor -> UI: Provides Show Request ID (showRequestId)
+
+    UI -> FindCtrl: findShowRequestById(showRequestId)
+    activate FindCtrl
+    FindCtrl -> ShowReqRepo: ofIdentity(showRequestId)
+    activate ShowReqRepo
+    ShowReqRepo --> FindCtrl: optShowRequest ' Optional<ShowRequest>
+    deactivate ShowReqRepo
+    FindCtrl --> UI: showRequestToEdit ' (or null if not found)
+    deactivate FindCtrl
+
+    alt showRequestToEdit is not null
+        UI --> Actor: Displays current details (from showRequestToEdit) and asks for new data \n(description, place, date, duration, drones)
+        Actor -> UI: Enters updated details (newDescription, newPlace, newDate, newDuration, newDrones)
+
+        UI --> Actor: "Do you want to change the customer? (y/n)"
+        Actor -> UI: Provides choice (e.g., 'y' or 'n')
+
+        opt User wants to change customer
+            UI -> ListUsersCtrl: listShodroneUsers()
+            activate ListUsersCtrl
+            ListUsersCtrl -> UserRepo: findAll() ' or similar
+            activate UserRepo
+            UserRepo --> ListUsersCtrl: allShodroneUsers
+            deactivate UserRepo
+            ListUsersCtrl --> UI: allShodroneUsers
+            deactivate ListUsersCtrl
+
+            UI --> Actor: Shows list of customers for selection
+            Actor -> UI: Selects a new customer (newSelectedCustomer)
+            UI -> EditCtrl: editShowRequest(showRequestToEdit, newDescription, newDate, newDuration, newPlace, newDrones, newSelectedCustomer)
+        else Customer not changed
+            UI -> EditCtrl: editShowRequest(showRequestToEdit, newDescription, newDate, newDuration, newPlace, newDrones, showRequestToEdit.getCustomer())
+        end opt
+
+        activate EditCtrl
+            ' Authorization check: authz.ensureAuthenticatedUserHasAnyOf(...)
+            ' Parameter validation
+
+            ' Create Value Objects from new data
+            EditCtrl -> DescVO: valueOf(newDescription)
+            activate DescVO
+            DescVO --> EditCtrl: newDescVO
+            deactivate DescVO
+            ' ... similar calls for PlaceVO, ShowDateVO, DurationVO, NDronesVO ...
+            EditCtrl -> PlaceVO: valueOf(newPlace)
+            activate PlaceVO
+            PlaceVO --> EditCtrl: newPlaceVO
+            deactivate PlaceVO
+
+            EditCtrl -> ShowDateVO: valueOf(formattedNewShowDate)
+            activate ShowDateVO
+            ShowDateVO --> EditCtrl: newShowDateVO
+            deactivate ShowDateVO
+
+            EditCtrl -> DurationVO: valueOf(newDuration)
+            activate DurationVO
+            DurationVO --> EditCtrl: newDurationVO
+            deactivate DurationVO
+
+            EditCtrl -> NDronesVO: valueOf(newDrones)
+            activate NDronesVO
+            NDronesVO --> EditCtrl: newNDronesVO
+            deactivate NDronesVO
+
+            ' Update the existing ShowRequestEntity instance
+            EditCtrl -> ShowRequestEntity: updateShowDescription(newDescVO)
+            note right of ShowRequestEntity: Methods called on the \n'showRequestToEdit' instance
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            EditCtrl -> ShowRequestEntity: updateShowPlace(newPlaceVO)
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            EditCtrl -> ShowRequestEntity: updateShowDate(newShowDateVO)
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            EditCtrl -> ShowRequestEntity: updateShowDuration(newDurationVO)
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            EditCtrl -> ShowRequestEntity: updateShowNDrones(newNDronesVO)
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            EditCtrl -> ShowRequestEntity: updateShowCustomer(newCustomerForUpdate) ' newSelectedCustomer or original
+            activate ShowRequestEntity
+            ShowRequestEntity --> EditCtrl
+            deactivate ShowRequestEntity
+
+            ' Save Updated Show Request
+            EditCtrl -> ShowReqRepo: save(showRequestToEdit) ' Pass the updated instance
+            activate ShowReqRepo
+            ShowReqRepo --> EditCtrl: savedShowRequest ' The updated ShowRequest instance
+            deactivate ShowReqRepo
+        EditCtrl --> UI: savedShowRequest ' (or confirmation)
+        deactivate EditCtrl
+        UI --> Actor: Displays Success message and updated details
+    else Show Request not found
+        UI --> Actor: Displays "Show Request not found" message
+    end
+
+deactivate UI
+deactivate Actor
+
+@enduml

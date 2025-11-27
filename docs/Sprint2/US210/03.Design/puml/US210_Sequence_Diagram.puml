@@ -1,0 +1,86 @@
+@startuml US210_Login_Sequence_Diagram
+
+actor User
+participant LoginUI as UI <<Presentation>>
+participant AuthenticationCredentialHandler as CredHandler <<Infrastructure>>
+participant AuthzRegistry <<Infrastructure>>
+participant AuthenticationService as AuthService <<Application Service>>
+participant UserRepository as UserRepo <<Repository>>
+participant SystemUser as SysUser <<Domain Entity>>
+participant PasswordPolicy as PassPolicy <<Domain>>
+participant PasswordEncoder as PassEncoder <<Domain>>
+participant UserSession as Session <<Domain>>
+
+activate User
+User -> UI : attempts to login
+activate UI
+UI -> User : requests username and password
+User -> UI : provides username, password
+UI -> CredHandler : authenticated(username, password, onlyWithThisRole)
+activate CredHandler
+
+CredHandler -> AuthzRegistry : authenticationService()
+activate AuthzRegistry
+AuthzRegistry --> CredHandler : authService
+deactivate AuthzRegistry
+
+CredHandler -> AuthService : authenticate(username, password, onlyWithThisRole)
+activate AuthService
+
+AuthService -> UserRepo : ofIdentity(username)
+activate UserRepo
+UserRepo --> AuthService : optionalUser
+deactivate UserRepo
+
+alt if user exists and is active
+    AuthService -> SysUser : passwordMatches(password)
+    activate SysUser
+    SysUser -> PassEncoder : matches(rawPassword, storedPassword)
+    activate PassEncoder
+    PassEncoder --> SysUser : passwordsMatch (boolean)
+    deactivate PassEncoder
+    SysUser --> AuthService : passwordsMatchResult
+    deactivate SysUser
+
+    alt if passwords match
+        alt if onlyWithThisRole is specified
+            AuthService -> SysUser : hasAny(onlyWithThisRole)
+            activate SysUser
+            SysUser --> AuthService : hasRole (boolean)
+            deactivate SysUser
+            alt if hasRole
+                AuthService -> Session : new UserSession(user)
+                activate Session
+                Session --> AuthService : userSession
+                deactivate Session
+                AuthService --> CredHandler : Optional.of(userSession)
+            else no required role
+                AuthService --> CredHandler : Optional.empty()
+            end
+        else no specific role required
+            AuthService -> Session : new UserSession(user)
+            activate Session
+            Session --> AuthService : userSession
+            deactivate Session
+            AuthService --> CredHandler : Optional.of(userSession)
+        end
+    else passwords do not match
+        AuthService --> CredHandler : Optional.empty() (Authentication Failure)
+    end
+else user does not exist or is not active
+    AuthService --> CredHandler : Optional.empty() (Authentication Failure)
+end
+deactivate AuthService
+
+CredHandler --> UI : isAuthenticated (boolean from Optional.isPresent())
+deactivate CredHandler
+
+alt if isAuthenticated
+    UI -> User : Login Successful
+else Login Failed
+    UI -> User : Login Failed (Wrong username/password or insufficient permissions)
+end
+deactivate UI
+deactivate User
+
+@enduml

@@ -1,0 +1,91 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as Actor
+
+participant ":AddShowProposalUI" as UI
+participant ":FindShowRequestController" as FindController
+participant ":ShowRequestRepository" as RequestRepo
+participant ":ListDronesInventoryController" as DroneController
+participant ":DroneInventoryRepository" as DroneRepo
+participant ":CreateShowProposalController" as CreateController
+participant "showProposal:ShowProposal" as Proposal
+participant "builder:ShowProposalBuilder" as Builder
+participant "showRequest:ShowRequest" as Request
+participant "authz:AuthorizationService" as Authz
+
+activate Actor
+Actor -> UI : Initiates Create Show Proposal
+activate UI
+
+UI -> FindController : listShowRequests()
+activate FindController
+FindController -> RequestRepo : obtainAllShowRequests()
+activate RequestRepo
+RequestRepo --> FindController : showRequestList
+deactivate RequestRepo
+FindController --> UI : showRequestList
+deactivate FindController
+
+UI -> DroneController : listAllDrones()
+activate DroneController
+DroneController -> DroneRepo : listAllDrones()
+activate DroneRepo
+DroneRepo --> DroneController : availableDrones
+deactivate DroneRepo
+DroneController --> UI : availableDrones
+deactivate DroneController
+
+UI --> Actor : Asks to select a Show Request and provide proposal details
+Actor -> UI : Selects Show Request and provides data
+UI -> CreateController : createShowProposal(showRequest, description, nDrones, ...)
+activate CreateController
+
+CreateController -> Authz : session().get().authenticatedUser()
+activate Authz
+Authz --> CreateController : manager:SystemUser
+deactivate Authz
+
+CreateController -> Builder : new()
+activate Builder
+CreateController -> Builder : withDescription(description)
+CreateController -> Builder : withNumberOfDrones(nDrones)
+CreateController -> Builder : withDuration(duration)
+CreateController -> Builder : withProposedPlace(place)
+CreateController -> Builder : withProposedShowDate(date)
+CreateController -> Builder : withInsurance(insurance)
+CreateController -> Builder : withManager(manager)
+CreateController -> Builder : build()
+
+Builder -> Proposal : new(description, nDrones, ...)
+activate Proposal
+Proposal --> Builder : showProposal
+deactivate Proposal
+
+Builder --> CreateController : showProposal
+deactivate Builder
+
+CreateController -> Request : getFigure()
+activate Request
+Request --> CreateController : previousFigures
+deactivate Request
+
+loop for each Figure in previousFigures
+    CreateController -> Proposal : addFigure(new ProposalFigure(figure))
+end
+
+CreateController -> Request : addProposal(showProposal)
+activate Request
+deactivate Request
+
+CreateController -> RequestRepo : save(showRequest)
+activate RequestRepo
+RequestRepo --> CreateController : updatedShowRequest
+deactivate RequestRepo
+
+CreateController --> UI :
+deactivate CreateController
+UI --> Actor : Informs success
+deactivate UI
+deactivate Actor
+
+@enduml

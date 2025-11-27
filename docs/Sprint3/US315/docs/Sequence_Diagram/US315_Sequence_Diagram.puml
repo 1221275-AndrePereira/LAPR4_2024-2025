@@ -1,0 +1,56 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as User
+
+participant ":EditVideoOfProposalUI" as UI
+participant ":ListShowProposalController" as ListController
+participant "showProposalRepository:ShowProposalRepository" as Repo
+participant ":AddVideoToProposalController" as AddVideoController
+participant "proposal:ShowProposal" as Proposal
+participant "videoLink:ProposalVideoLink" as VideoLink
+
+activate User
+User -> UI : Starts "Add/Remove Video of Proposal"
+activate UI
+
+UI -> ListController : findProposalsByStatus(SAFE)
+activate ListController
+ListController -> Repo : findByStatus(ProposalStatus.SAFE)
+activate Repo
+Repo --> ListController : safeProposals
+deactivate Repo
+deactivate ListController
+
+UI --> User : Shows list of safe proposals and asks to select one
+User -> UI : Selects a proposal
+
+UI --> User : Asks to add or remove video
+User -> UI : Chooses to add a video and provides the video link
+
+UI -> AddVideoController : addVideoToProposal(proposal, videoLink)
+activate AddVideoController
+
+create VideoLink
+AddVideoController -> VideoLink : valueOf(videoLink)
+AddVideoController -> Proposal : setVideoLink(videoLink)
+activate Proposal
+deactivate Proposal
+
+AddVideoController -> Proposal : updateStatus()
+activate Proposal
+deactivate Proposal
+
+AddVideoController -> Repo : save(proposal)
+activate Repo
+Repo --> AddVideoController :
+deactivate Repo
+
+AddVideoController --> UI :
+deactivate AddVideoController
+
+UI --> User : Displays success message
+deactivate UI
+
+deactivate User
+
+@enduml

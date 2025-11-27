@@ -1,0 +1,35 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as User
+participant ":System" as System
+
+activate User
+User -> System : Starts "Add/Remove Video of Proposal"
+activate System
+System --> User : Shows list of safe proposals and asks to select one
+deactivate System
+
+User -> System : Selects a proposal
+activate System
+System --> User : Asks to add or remove the video
+deactivate System
+
+alt Add Video
+    User -> System : Chooses to add a video
+    activate System
+    System --> User : Prompts for the video link
+    deactivate System
+
+    User -> System : Enters the video link
+    activate System
+    System --> User : Confirms that the video was added successfully
+    deactivate System
+else Remove Video
+    User -> System : Chooses to remove the video
+    activate System
+    System --> User : Confirms that the video was removed successfully
+    deactivate System
+end
+
+deactivate User
+@enduml

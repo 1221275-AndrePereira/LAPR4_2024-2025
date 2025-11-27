@@ -1,0 +1,87 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+
+
+package " Customer" #fff37a{
+object Customer<<Entity>><<Root>>{
+	-Company :String
+}
+note right of Customer
+    In case of
+    a Figure has
+    an exclusive
+    Customer.
+end note
+}
+
+package "Figure " #88ee88{
+object Figure <<Entity>> <<Root>>{
+    -author:SystemUser
+    -isActive:boolean
+}
+note right of Figure
+    Only active
+    Figures are
+    shown
+end note
+
+object Keyword <<Value Object>>{
+    -keyword : String
+}
+
+object figureVersion <<Value Object>>{
+ -version: Version
+}
+
+object Description <<Value Object>>{
+    -description :String
+}
+}
+
+package "Show Proposal" #9bc8ff{
+    object ShowProposal <<Entity>> <<Root>>{
+        -Description :String
+    }
+
+    object ProposalStatus <<Value Object>> {
+        -Status: Enum
+    }
+    note right of ProposalStatus
+        Only the
+        INCOMPLETE
+        matters to this
+        user story.
+    end note
+
+    object ProposalFigures <<Value Object>>{
+    }
+
+   object DroneTypeSettings <<Value Object>> {
+
+   }
+   note right of DroneTypeSettings
+        It will be
+        instantiated
+        as a null
+    end note
+}
+
+
+' --------------------- WITHIN AGGREGATE RELATIONS -------------------------------
+
+ShowProposal "1" --> "1" ProposalStatus :has
+ShowProposal "1"-->"1..*" ProposalFigures : has
+DroneTypeSettings "1..*" <-up- "1" ProposalFigures :has
+
+Figure "1"-->"1" figureVersion: has
+Figure "1"-->"1..*" Keyword: has
+Figure "1"--> "1" Description: has
+
+'--------------------- AGGREGATES RELATIONS -----------------------
+
+Customer "1" <---- "0..*" Figure :contains
+
+ProposalFigures "0..*"-up->"1" Figure : contains
+
+@enduml

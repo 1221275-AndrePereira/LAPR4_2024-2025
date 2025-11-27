@@ -1,0 +1,71 @@
+@startuml
+
+title <size:20>Sequence Diagram US321</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":AddMaintenanceTypeUI" as UI <<presentation>>
+participant ":AddMaintenanceTypeController" as Controller <<application>>
+participant ":MaintenanceTypeBuilder" as Builder <<builder>>
+participant ":MaintenanceType" as Domain <<domain>>
+participant PersistenceContext <<framework>>
+participant RepositoryFactory <<framework>>
+participant MaintenanceTypeRepository <<repository>>
+
+activate Actor
+Actor -> UI: Asks to add a new maintenance type
+activate UI
+    UI -> Controller**: create
+    activate Controller
+
+    UI --> Actor: Ask information about maintenance type(maintenanceTypeName)
+    Actor -> UI: Types name of the maintenance type
+
+    UI -> Controller: addMaintenanceType(maintenanceTypeName)
+        note right of Builder: MaintenanceTypeBuilder is used to create \na valid MaintenanceType entity
+        Controller -> Builder : create
+        activate Builder
+        Builder -> Builder : withName(maintenanceTypeName)
+        Builder -> Builder : build()
+        Builder -> Domain : build(maintenanceTypeName)
+        activate Domain
+        Domain --> Builder : maintenanceType
+        deactivate Domain
+        Builder --> Controller : maintenanceType
+deactivate Builder
+
+        Controller -> PersistenceContext : repositories()
+        activate PersistenceContext
+        PersistenceContext -> RepositoryFactory : create()
+        activate RepositoryFactory
+        RepositoryFactory -> MaintenanceTypeRepository : create()
+        activate MaintenanceTypeRepository
+        Controller -> MaintenanceTypeRepository : save(maintenanceType)
+        MaintenanceTypeRepository --> Controller : maintenanceType
+
+
+
+    Controller --> UI : maintenanceType
+    deactivate Controller
+
+    UI-->Actor: Sucess message
+
+deactivate PersistenceContext
+deactivate RepositoryFactory
+deactivate MaintenanceTypeRepository
+deactivate Domain
+deactivate Controller
+deactivate UI
+deactivate Actor
+deactivate Builder
+
+
+@enduml

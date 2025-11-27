@@ -1,0 +1,50 @@
+@startuml
+
+title <size:20>Sequence Diagram US242 - Remove Drone Model</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":RemoveDroneModelUI" as UI <<presentation>>
+participant ":DroneModelController" as Controller <<application>>
+participant ":DroneModel" as Domain <<domain>>
+participant DroneModelRepository <<repository>>
+
+activate Actor
+Actor -> UI: Requests to remove a drone model
+activate UI
+
+    UI -> Controller: delete
+    activate Controller
+
+    UI --> Actor: Ask for drone model ID to remove
+    Actor -> UI: Provides drone model ID
+
+    UI -> Controller: removeDroneModel(droneModelID)
+        Controller -> DroneModelRepository: findById(droneModelID)
+        activate DroneModelRepository
+        DroneModelRepository --> Controller: foundDroneModel
+        deactivate DroneModelRepository
+
+        Controller -> Domain: delete(foundDroneModel)
+        activate Domain
+        Domain --> Controller: deletionConfirmed
+        deactivate Domain
+
+        Controller -> DroneModelRepository: delete(droneModelID)
+        activate DroneModelRepository
+        DroneModelRepository --> Controller: deletionSuccess
+        deactivate DroneModelRepository
+
+    Controller --> UI: deletionSuccess
+    deactivate Controller
+
+    UI --> Actor: Confirmation message for successful removal
+
+deactivate UI
+deactivate Actor
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml
+
+title <size:20>System Sequence Diagram US312</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor CRMCollaborator as User
+participant System
+
+    activate User
+    User->System: starts "Add Figures to Proposal"
+
+    activate System
+    System-->>User: displays current figures in proposal & available figures
+
+    loop until user is done
+        User->System: selects an option (add/remove/order/save)
+
+        alt Add Figure
+            User->System: chooses to add a figure
+            System-->>User: displays list of available figures (public & exclusive to customer)
+            User->System: selects a figure
+            System-->>User: updates current selection & displays it
+
+        else Remove Figure
+            User->System: chooses to remove a figure
+            System-->>User: displays list of currently selected figures
+            User->System: selects a figure to remove
+            System-->>User: updates current selection & displays it
+
+        else Order Figures
+            User->System: chooses to order figures
+            System-->>User: displays current selection with indices for ordering
+            User->System: provides desired order (e.g., (F1,F3,F2))
+            System-->>User: updates current selection internally
+
+        else Define Figures Order and Save (Exit)
+            User->System: chooses to define order and save
+            System-->>User: displays confirmation of saved order
+        end
+
+    end
+
+
+
+
+
+@enduml

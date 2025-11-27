@@ -1,0 +1,91 @@
+@startuml
+actor "Administrator" as AdminActor
+participant ":AddUserAdminUI" as UI
+participant "addSystemUserCtrl:\nAddSystemUserController" as AddSystemUserCtrl
+participant "addShodroneUserCtrl:\nAddShodroneUserController" as AddShodroneUserCtrl
+participant "userSvc:\nUserManagementService" as UserSvc
+participant "shodroneUserRepo:\nShodroneUserRepository" as ShodroneUserRepo
+participant "repDefaults:\nCustomerRepresentativeDefaultValues" as RepDefaults
+participant "newSystemUser:\nSystemUser" as SysUser
+participant "newShodroneUser:\nShodroneUser" as ShodroneUser
+participant "newRepSystemUser:\nSystemUser" as RepSysUser
+participant "newRep:\nCustomerRepresentative" as CustRep
+
+activate AdminActor
+
+AdminActor -> UI : Initiates Add User
+activate UI
+
+UI -> AdminActor : Prompts for user details (username, password, name, email, roles)
+AdminActor --> UI : Provides user details
+
+alt Roles are ADMIN or POWER_USER
+
+    UI -> addSystemUserCtrl : addUser(username, password, firstName, lastName, email, roles)
+    activate addSystemUserCtrl
+
+    addSystemUserCtrl -> UserSvc : registerNewUser(username, password, firstName, lastName, email, roles, createdOn)
+    activate UserSvc
+
+    UserSvc --> addSystemUserCtrl : returns newSystemUser
+    deactivate UserSvc
+
+    create SysUser
+    addSystemUserCtrl -> SysUser : <<create>>
+
+    addSystemUserCtrl --> UI : returns newSystemUser
+    deactivate addSystemUserCtrl
+
+else Other Backoffice Roles (e.g., CRM_MANAGER, CRM_COLLABORATOR, SHOW_DESIGNER)
+
+    UI -> AdminActor : Prompts for additional details (VAT, phone, address)
+    AdminActor --> UI : Provides additional details
+
+    UI -> addShodroneUserCtrl : signup(username, password, firstName, lastName, email, vatNumber, streetAddress, postalCode, city, phoneNumber, roles)
+    activate AddShodroneUserCtrl
+
+    AddShodroneUserCtrl -> UserSvc : registerNewUser(username, password, firstName, lastName, email, roles, createdOn)
+    activate UserSvc
+
+    UserSvc --> AddShodroneUserCtrl : returns newSystemUser (for ShodroneUser)
+    deactivate UserSvc
+
+    create SysUser
+    AddShodroneUserCtrl -> SysUser : <<create>> (main SystemUser)
+
+
+    AddShodroneUserCtrl -> RepDefaults : buildRepresentativeDetails(username, firstName, lastName)
+    activate RepDefaults
+
+    RepDefaults --> AddShodroneUserCtrl : returns repDetailsDTO
+    deactivate RepDefaults
+
+    AddShodroneUserCtrl -> UserSvc : registerNewUser(repDetails.username, repDetails.password, repDetails.firstName, repDetails.lastName, repDetails.systemEmail, repRoles, createdOn)
+    activate UserSvc
+
+    UserSvc --> AddShodroneUserCtrl : returns newRepSystemUser (for Representative)
+    deactivate UserSvc
+
+    create RepSysUser
+    AddShodroneUserCtrl -> RepSysUser : <<create>> (Representative's SystemUser)
+
+    create CustRep
+    AddShodroneUserCtrl -> CustRep : <<create>> CustomerRepresentative(newRepSystemUser, repDetails.phoneNumber, repDetails.companyEmail)
+
+    create ShodroneUser
+    AddShodroneUserCtrl -> ShodroneUser : <<create>> ShodroneUser(newSystemUser, phoneNumber, vatNumber, address, listWithNewRep)
+
+    AddShodroneUserCtrl -> ShodroneUserRepo : save(newShodroneUser)
+    activate ShodroneUserRepo
+
+    ShodroneUserRepo --> AddShodroneUserCtrl : returns savedShodroneUser
+    deactivate ShodroneUserRepo
+
+    AddShodroneUserCtrl --> UI : returns savedShodroneUser
+    deactivate AddShodroneUserCtrl
+end
+
+UI -> AdminActor : Displays success/failure message
+deactivate UI
+
+@enduml

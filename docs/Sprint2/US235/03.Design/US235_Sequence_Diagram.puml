@@ -1,0 +1,87 @@
+@startuml
+
+title <size:20>Sequence Diagram US235: List Customer's Show Requests</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor "CRM Manager/Collaborator" as Actor
+participant ":ListShowRequestUI" as UI <<presentation>>
+participant ":ListShodroneUsersController" as ListUsersCtrl <<application>>
+participant ":FindShowRequestController" as FindShowReqCtrl <<application>>
+participant "PersistenceContext" as PC <<static>>
+participant "RepositoryFactory" as RF <<framework>>
+participant "UserRepository" as UserRepo <<repository>>
+participant "ShowRequestRepository" as ShowReqRepo <<repository>>
+
+activate Actor
+Actor -> UI: Asks to list all show requests of a customer.
+activate UI
+
+    ' Controller Initialization (typically happens when ListShowRequestUI is created)
+    ' This section shows how controllers get their repositories.
+    UI -[#blue]> ListUsersCtrl: <<create>>
+    activate ListUsersCtrl
+        ListUsersCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> ListUsersCtrl: repositoryFactory
+        deactivate PC
+
+        ListUsersCtrl -[#blue]> RF: userRepository() ' Assumed method on factory for user repo
+        activate RF
+        RF -[#blue]> UserRepo: <<create>> ' Or get instance
+        RF --[#blue]> ListUsersCtrl: userRepository
+        deactivate RF
+    deactivate ListUsersCtrl
+
+    UI -[#blue]> FindShowReqCtrl: <<create>>
+    activate FindShowReqCtrl
+        FindShowReqCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> FindShowReqCtrl: repositoryFactory
+        deactivate PC
+
+        FindShowReqCtrl -[#blue]> RF: showRequestCatalogue() ' Actual method from code
+        activate RF
+        RF -[#blue]> ShowReqRepo: <<create>> ' Or get instance
+        RF --[#blue]> FindShowReqCtrl: showRequestRepository
+        deactivate RF
+    deactivate FindShowReqCtrl
+    ' End Controller Initialization
+
+    ' Step 1: List and Select Customer
+    UI -> ListUsersCtrl: listShodroneUsers()
+    activate ListUsersCtrl
+        ' ListUsersCtrl interacts with its UserRepository to get all ShodroneUser entities
+        ListUsersCtrl -> UserRepo: findAll() ' Or a similar method to fetch all users
+        activate UserRepo
+        UserRepo --> ListUsersCtrl: allShodroneUsers (Iterable<ShodroneUser>)
+        deactivate UserRepo
+    ListUsersCtrl --> UI: allShodroneUsers
+    deactivate ListUsersCtrl
+
+    ' UI filters the 'allShodroneUsers' list to keep only those with CRM_COLLABORATOR role.
+    ' UI then presents these customers to the Actor for selection (using SelectWidget).
+    UI --> Actor: Shows list of customers (filtered ShodroneUsers) for selection
+    Actor -> UI: Selects a customer (selectedUser: ShodroneUser)
+
+    ' Step 2: Fetch and Display Show Requests for the Selected Customer
+    UI -> FindShowReqCtrl: findShowRequestsByCustomer(selectedUser)
+    activate FindShowReqCtrl
+        ' FindShowReqCtrl uses its ShowRequestRepository instance
+        FindShowReqCtrl -> ShowReqRepo: findByCustomer(selectedUser)
+        activate ShowReqRepo
+        ShowReqRepo --> FindShowReqCtrl: customerShowRequests (List<ShowRequest>)
+        deactivate ShowReqRepo
+    FindShowReqCtrl --> UI: customerShowRequests
+    deactivate FindShowReqCtrl
+
+    ' UI displays the retrieved show requests (customerShowRequests) for the selected customer.
+    ' If the list is empty, an appropriate message is shown.
+    UI --> Actor: Displays the selected customer's show requests / Message if none
+deactivate UI
+deactivate Actor
+
+@enduml

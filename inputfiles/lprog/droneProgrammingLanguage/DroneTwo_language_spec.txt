@@ -1,0 +1,13 @@
+DroneTwo
+Position aPoint = (0, 1, 1.5);
+Vector aDirection = (0,0,1);
+LinearVelocity aVelocity = 6.2;
+AngularVelocity rotVelocity = 0.314;
+
+takeOff(15, 6);
+land(4);
+move((20, 20, 20), 6);
+moveCircle((0, 0, 0), 90, 1);
+hoover(2000);
+lightsOn();
+lightsOff();

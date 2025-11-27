@@ -1,0 +1,16 @@
+===================================
+       FIGURE SIMULATION REPORT     
+===================================
+
+
+------SIMULATION SUMMARY------
+
+FINAL SIMULATION RESULT: The figure has passed validation (No Collisions)
+Total drones in simulation: 2
+Drones active at end: 2
+Drones inactive at end: 0
+Total collisions: 0
+
+===================================
+        END OF REPORT
+===================================

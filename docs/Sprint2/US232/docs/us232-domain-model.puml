@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+
+package "Figure Category" #ddaddd{
+object FigureCategory <<Entity>> <<Root>>{
+    -Description :String
+}
+}
+package " Customer" #fff37a{
+object Customer<<Entity>><<Root>>{
+	-Company :String
+}
+}
+
+package "Figure " #9cffaa{
+object Figure <<Entity>> <<Root>>{
+	-description:String
+	-keywords:Set<String>
+	-figureVersion:Version
+	-author:SystemUser
+	-code:Set<String>
+	-dslVersion:Version
+    -creationDate:LocalDate
+    -isActive:boolean
+
+}
+object Version <<Value Object>>{
+ -version:String
+}
+
+
+
+
+Figure "0..*" -up-> "1..*" FigureCategory :has
+Customer "1"<--"0..*" Figure :contains
+
+Figure "1"<--"1" Version : dslVersion
+Figure "1"<--"1" Version : figureVersion
+@enduml

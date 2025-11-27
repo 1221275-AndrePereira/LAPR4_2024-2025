@@ -1,0 +1,30 @@
+@startuml
+autonumber
+actor "User" as User
+
+participant ":ListActiveFiguresUI" as UI
+participant ":ListFigureController" as Ctrl
+participant ":FigureRepository" as FigRepo
+
+
+
+activate User
+User -> UI : initiates list active figures
+activate UI
+
+UI -> Ctrl : listActiveFigures()
+activate Ctrl
+    Ctrl -> FigRepo : allActiveFigures()
+    activate FigRepo
+    FigRepo --> Ctrl : activeFigures:List<Figure>
+    deactivate FigRepo
+Ctrl --> UI : figures:List<Figure>
+deactivate Ctrl
+UI --> User : displayFigures(FiguresList)
+
+
+
+deactivate UI
+deactivate User
+
+@enduml

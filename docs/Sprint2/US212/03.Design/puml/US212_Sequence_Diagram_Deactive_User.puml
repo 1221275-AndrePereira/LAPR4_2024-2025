@@ -1,0 +1,64 @@
+@startuml
+actor Administrator as Admin
+participant ":DeactivateUserUI" as UI
+participant "controller:\nDeactivateActiveSystemUserController" as DeactCtrl
+participant "userSvc:\nUserManagementService" as UserSvc
+participant "userToDeactivate:\nSystemUser" as User
+participant "userRepo:\nUserRepository" as UserRepo
+
+activate Admin
+
+Admin -> UI : Initiates Deactivate User
+activate UI
+
+UI -> DeactCtrl : activeUsers()
+activate DeactCtrl
+
+DeactCtrl -> UserSvc : activeUsers()
+activate UserSvc
+
+UserSvc -> UserRepo : findAllActive()
+activate UserRepo
+
+UserRepo --> UserSvc : returns activeSystemUsers
+deactivate UserRepo
+
+UserSvc --> DeactCtrl : returns activeSystemUsers
+deactivate UserSvc
+
+DeactCtrl --> UI : returns activeSystemUsers
+deactivate DeactCtrl
+
+UI -> Admin : Displays list of active users and prompts for selection
+Admin --> UI : Selects userToDeactivate
+
+UI -> DeactCtrl : deactivateUser(userToDeactivate)
+activate DeactCtrl
+
+DeactCtrl -> UserSvc : deactivateUser(userToDeactivate)
+activate UserSvc
+
+UserSvc -> userToDeactivate : deactivate()
+activate User
+
+userToDeactivate --> UserSvc
+deactivate User
+
+UserSvc -> UserRepo : save(userToDeactivate)
+activate UserRepo
+
+UserRepo --> UserSvc : returns updatedUser
+deactivate UserRepo
+
+UserSvc --> DeactCtrl : returns updatedUser
+deactivate UserSvc
+
+DeactCtrl --> UI : returns updatedUser
+deactivate DeactCtrl
+
+UI -> Admin : Displays success/failure message
+deactivate UI
+
+deactivate Admin
+
+@enduml

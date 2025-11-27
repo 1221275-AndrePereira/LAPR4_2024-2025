@@ -1,0 +1,31 @@
+@startuml
+
+title <size:20>Sequence Diagram US347</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor CRMManager as Actor
+participant ":ConfigureShowProposalDocumentTemplateUI" as UI <<presentation>>
+
+
+activate Actor
+Actor -> UI: asks to send show proposal to customer
+activate UI
+
+
+UI --> Actor: requests the id of the show proposal and the \ntemplate id of the show proposal document \ntemplate to be sent
+deactivate UI
+Actor -> UI: provides show proposal id and proposal document template id
+activate UI
+
+UI --> Actor: Success message
+
+deactivate Actor
+@enduml

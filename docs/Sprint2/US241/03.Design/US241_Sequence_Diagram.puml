@@ -1,0 +1,45 @@
+@startuml
+
+title <size:20>Sequence Diagram US241 - Add Drone Model</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":AddDroneModelUI" as UI <<presentation>>
+participant ":DroneModelController" as Controller <<application>>
+participant ":DroneModel" as Domain <<domain>>
+participant DroneModelRepository <<repository>>
+
+activate Actor
+Actor -> UI: Requests to add a new drone model
+activate UI
+
+    UI -> Controller: create
+    activate Controller
+
+    UI --> Actor: Request drone model details (name, wind behavior, tolerances, etc.)
+    Actor -> UI: Provides drone model details
+
+    UI -> Controller: addDroneModel(details)
+        Controller -> Domain: new(details)
+        activate Domain
+        Domain --> Controller: newDroneModel
+        deactivate Domain
+
+        Controller -> DroneModelRepository: save(newDroneModel)
+        activate DroneModelRepository
+        DroneModelRepository --> Controller: savedDroneModel
+        deactivate DroneModelRepository
+
+    Controller --> UI: savedDroneModel
+    deactivate Controller
+
+    UI --> Actor: Confirmation of successful drone model addition with details
+
+deactivate UI
+deactivate Actor
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+
+title <size:20>Sequence Diagram US245</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor ShowDesigner as Actor
+participant ":AddFigureCategoryUI" as UI <<presentation>>
+participant ":AddFigureCategoryController" as Controller <<application>>
+participant ":FigureCategoryBuilder" as FigureCategoryBuilder <<builder>>
+participant ":FigureCategory" as Domain <<domain>>
+participant PersistenceContext <<framework>>
+participant RepositoryFactory <<framework>>
+participant FigureCategoryCatalogue <<repository>>
+
+activate Actor
+Actor -> UI: Asks to add a new figure category
+activate UI
+    UI -> Controller**: create
+    activate Controller
+
+    UI --> Actor: Ask information about figure category(name, description(optional))
+    Actor -> UI: Types name and optionally description of the figure category
+
+    UI -> Controller: addFigureCategory(name, description)
+        note right of FigureCategoryBuilder: FigureCategoryBuilder is used to create \na valid FigureCategory entity
+        Controller -> FigureCategoryBuilder : create
+        activate FigureCategoryBuilder
+        FigureCategoryBuilder -> FigureCategoryBuilder : withName(Name)
+        FigureCategoryBuilder -> FigureCategoryBuilder : withDescription(description)
+        FigureCategoryBuilder -> FigureCategoryBuilder : withCreationDate(creationDate)
+        FigureCategoryBuilder -> FigureCategoryBuilder : withLastUpdateDate(lastUpdateDate)
+        FigureCategoryBuilder -> FigureCategoryBuilder : withStatus(status)
+        FigureCategoryBuilder -> FigureCategoryBuilder : build()
+        FigureCategoryBuilder -> Domain : build(name, description, creationDate, lastUpdateDate, status)
+        activate Domain
+        Domain --> FigureCategoryBuilder : figureCategory
+        deactivate Domain
+        FigureCategoryBuilder --> Controller : figureCategory
+
+
+        Controller -> PersistenceContext : repositories()
+        activate PersistenceContext
+        PersistenceContext -> RepositoryFactory : create()
+        activate RepositoryFactory
+        RepositoryFactory -> FigureCategoryCatalogue : create()
+        activate FigureCategoryCatalogue
+        Controller -> FigureCategoryCatalogue : save(figureCategory)
+        FigureCategoryCatalogue --> Controller : figureCategory
+
+
+
+    Controller --> UI : figureCategory
+    deactivate Controller
+
+    UI-->Actor: Sucess message
+
+deactivate PersistenceContext
+deactivate RepositoryFactory
+deactivate FigureCategoryCatalogue
+deactivate Domain
+deactivate Controller
+deactivate UI
+deactivate Actor
+deactivate FigureCategoryBuilder
+
+
+@enduml

@@ -1,0 +1,15 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as Actor
+participant ":System" as System
+
+activate Actor
+Actor -> System : Initiates Create Show Proposal
+activate System
+System --> Actor : Lists existing show requests and available resources
+Actor -> System : Selects a show request and enters proposal details\n(date, place, duration, number of drones, insurance)
+System --> Actor : Confirms successful creation of the show proposal
+deactivate System
+deactivate Actor
+
+@enduml

@@ -1,0 +1,61 @@
+@startuml
+
+hide empty members
+
+package "UI Layer (Backoffice Console)" <<Presentation>> {
+    class ListUsersUI {
+        - theController: ListSystemUsersController
+        --
+        + doShow()
+        + elementPrinter(): Visitor<SystemUser>
+        + elements(): Iterable<SystemUser>
+    }
+
+    class SystemUserPrinter <<Visitor>> {
+        --
+        + visit(visitee: SystemUser)
+    }
+}
+
+package "Application Layer" <<Application>> {
+    class ListSystemUsersController {
+      - authz: AuthorizationService
+      - userSvc: UserManagementService
+      --
+      + allUsers(): Iterable<SystemUser>
+      + find(username: Username): Optional<SystemUser>
+    }
+}
+
+package "Domain Layer (Framework Core)" <<Domain>> {
+  class SystemUser <<Framework Entity>> {
+    - username: Username
+    - name: Name (firstName, lastName)
+    - active: boolean
+    --
+    + username(): Username
+    + name(): Name
+    + isActive(): boolean
+  }
+
+  interface UserManagementService <<Framework Service>> {
+    + allUsers(): Iterable<SystemUser>
+    + userOfIdentity(username: Username): Optional<SystemUser>
+  }
+
+  interface UserRepository <<Framework Repository>> {
+    + findAll(): Iterable<SystemUser>
+    + ofIdentity(username: Username): Optional<SystemUser>
+  }
+}
+
+' Relationships
+ListUsersUI ..> ListSystemUsersController : uses >
+ListUsersUI ..> SystemUserPrinter : uses >
+SystemUserPrinter ..> SystemUser : visits >
+
+ListSystemUsersController --> UserManagementService : uses >
+UserManagementService --> UserRepository : uses >
+UserManagementService ..> SystemUser : manages >
+
+@enduml

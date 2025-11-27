@@ -1,0 +1,41 @@
+@startuml
+
+title <size:20>Sequence Diagram US247</size>
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor Actor as Actor
+note right of Actor: Actor might be Show Designer or CRM Collaborator
+participant ":ListFigureCategoriesUI" as UI <<presentation>>
+participant ":ListFigureCategoriesController" as Controller <<application>>
+participant ":FigureCategoryCatalogue" as Repository <<repository>>
+activate Actor
+Actor -> UI: Asks to list all figure categories
+activate UI
+    UI -> Controller**: create
+activate Controller
+
+
+
+
+    UI -> Controller: listFigureCategories()
+
+        Controller -> Repository: obtainAllFigureCategories()
+
+
+    activate Repository
+    Repository-->Controller: FigureCategories
+    deactivate Repository
+
+
+            Controller --> UI: FigureCategories
+     deactivate Controller
+
+        UI-->Actor: Shows list of figure categories
+deactivate UI
+deactivate Actor
+@enduml

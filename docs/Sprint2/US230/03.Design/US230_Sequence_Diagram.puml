@@ -1,0 +1,143 @@
+@startuml
+
+title <size:20>Sequence Diagram US230: Create Show Request</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor "CRM Collaborator" as Actor
+participant ":AddShowRequestUI" as UI <<presentation>>
+participant ":ListShodroneUsersController" as ListUsersCtrl <<application>>
+participant ":RegisterShowRequestController" as RegShowReqCtrl <<application>>
+participant "PersistenceContext" as PC <<static>>
+participant "RepositoryFactory" as RF <<framework>>
+participant "UserRepository" as UserRepo <<repository>>
+participant "ShowRequestRepository" as ShowReqRepo <<repository>>
+participant "ShowRequest" as ShowRequestEntity <<domain>>
+participant "Description" as DescVO <<domain>>
+participant "RequestPlace" as PlaceVO <<domain>>
+participant "RequestCreationDate" as CreateDateVO <<domain>>
+participant "RequestShowDate" as ShowDateVO <<domain>>
+participant "RequestDuration" as DurationVO <<domain>>
+participant "RequestNDrones" as NDronesVO <<domain>>
+
+
+activate Actor
+Actor -> UI: Asks to create a new show request
+activate UI
+
+    ' Controller Initialization (typically happens when UI is created)
+    UI -[#blue]> ListUsersCtrl: <<create>>
+    activate ListUsersCtrl
+        ' ListUsersCtrl obtains UserRepository via PersistenceContext and RepositoryFactory
+        ListUsersCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> ListUsersCtrl: repositoryFactory
+        deactivate PC
+        ListUsersCtrl -[#blue]> RF: userRepository() ' Assumed method name for user repo access
+        activate RF
+        RF -[#blue]> UserRepo: <<create>> ' Or get instance
+        RF --[#blue]> ListUsersCtrl: userRepository
+        deactivate RF
+    deactivate ListUsersCtrl
+
+    UI -[#blue]> RegShowReqCtrl: <<create>>
+    activate RegShowReqCtrl
+        ' RegShowReqCtrl obtains ShowRequestRepository via PersistenceContext and RepositoryFactory
+        RegShowReqCtrl -[#blue]> PC: repositories()
+        activate PC
+        PC --[#blue]> RegShowReqCtrl: repositoryFactory
+        deactivate PC
+        RegShowReqCtrl -[#blue]> RF: showRequestCatalogue() ' Actual method from code
+        activate RF
+        RF -[#blue]> ShowReqRepo: <<create>> ' Or get instance
+        RF --[#blue]> RegShowReqCtrl: showRequestRepository
+        deactivate RF
+    deactivate RegShowReqCtrl
+    ' End Controller Initialization
+
+    ' Step 1: Select Customer
+    UI -> ListUsersCtrl: listShodroneUsers()
+    activate ListUsersCtrl
+    ListUsersCtrl -> UserRepo: findAll() ' Or a similar method to fetch all users
+    activate UserRepo
+    UserRepo --> ListUsersCtrl: allShodroneUsers (Iterable<ShodroneUser>)
+    deactivate UserRepo
+    ListUsersCtrl --> UI: allShodroneUsers
+    deactivate ListUsersCtrl
+
+    ' UI filters users to get customers (those with CRM_COLLABORATOR role)
+    ' UI then presents these customers to the Actor for selection (e.g., using SelectWidget)
+    UI --> Actor: Shows list of customers for selection
+    Actor -> UI: Selects a customer (selectedUser: ShodroneUser)
+
+    ' Step 2: Gather Show Request Details
+    UI --> Actor: Ask for Show Request details (Description, Place, ShowDate, Duration, NDrones)
+    Actor -> UI: Provides Show Request details (descriptionText, placeText, requestShowDateCal, durationInt, nDronesInt)
+    ' Note: requestCreateDate is Calendar.getInstance() within the UI or Controller
+
+    ' Step 3: Register Show Request
+    UI -> RegShowReqCtrl: registerShowRequest(descriptionText, placeText, requestCreateDateCal, \n requestShowDateCal, durationInt, nDronesInt, selectedUser)
+    activate RegShowReqCtrl
+        ' Controller performs initial data validation (null checks, positive numbers, date order etc.)
+        ' Example: if (descriptionText == null || descriptionText.trim().isEmpty()) { throw new IllegalArgumentException(...); }
+
+        ' Controller creates Value Objects for the domain entity
+        RegShowReqCtrl -> DescVO: valueOf(descriptionText)
+        activate DescVO
+        DescVO --> RegShowReqCtrl: descriptionValueObject
+        deactivate DescVO
+
+        RegShowReqCtrl -> PlaceVO: valueOf(placeText)
+        activate PlaceVO
+        PlaceVO --> RegShowReqCtrl: placeValueObject
+        deactivate PlaceVO
+
+        ' requestCreateDateCal is typically Calendar.getInstance()
+        ' It's formatted to String then to RequestCreationDate VO
+        RegShowReqCtrl -> CreateDateVO: valueOf(formattedCreateDateString)
+        activate CreateDateVO
+        CreateDateVO --> RegShowReqCtrl: createDateValueObject
+        deactivate CreateDateVO
+
+        RegShowReqCtrl -> ShowDateVO: valueOf(formattedShowDateString) ' from requestShowDateCal
+        activate ShowDateVO
+        ShowDateVO --> RegShowReqCtrl: showDateValueObject
+        deactivate ShowDateVO
+
+        RegShowReqCtrl -> DurationVO: valueOf(durationInt)
+        activate DurationVO
+        DurationVO --> RegShowReqCtrl: durationValueObject
+        deactivate DurationVO
+
+        RegShowReqCtrl -> NDronesVO: valueOf(nDronesInt)
+        activate NDronesVO
+        NDronesVO --> RegShowReqCtrl: nDronesValueObject
+        deactivate NDronesVO
+
+        ' Controller creates the ShowRequest domain entity
+        RegShowReqCtrl -> ShowRequestEntity: <<create>> (descriptionValueObject, placeValueObject, createDateValueObject, \n showDateValueObject, durationValueObject, nDronesValueObject, selectedUser)
+        activate ShowRequestEntity
+        ShowRequestEntity --> RegShowReqCtrl: newShowRequest
+        deactivate ShowRequestEntity
+
+        ' Controller checks if selectedUser is a customer (has CRM_COLLABORATOR role)
+        RegShowReqCtrl -> RegShowReqCtrl: isCustomer(selectedUser)
+        ' This involves: selectedUser.systemUser().hasAny(ShodroneRoles.CRM_COLLABORATOR)
+        RegShowReqCtrl --> RegShowReqCtrl: true ' Assuming user is a customer
+
+        ' Controller saves the ShowRequest using its repository
+        RegShowReqCtrl -> ShowReqRepo: save(newShowRequest)
+        activate ShowReqRepo
+        ShowReqRepo --> RegShowReqCtrl: savedShowRequest ' The persisted ShowRequest entity
+        deactivate ShowReqRepo
+    RegShowReqCtrl --> UI: savedShowRequest ' Or confirmation/status
+    deactivate RegShowReqCtrl
+
+    UI --> Actor: Success message and displays created Show Request (or its ID) / Failure message
+deactivate UI
+deactivate Actor
+
+@enduml

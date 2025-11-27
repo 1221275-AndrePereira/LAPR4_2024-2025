@@ -1,0 +1,265 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+
+package " Customer" #fff37a{
+object Customer<<Entity>><<Root>>{
+	-Company :String
+}
+
+object Address <<Value Object>>{
+   -Address :String
+}
+
+object ShodroneEmail<<Value Object>>{
+-Email :String
+}
+
+object PhoneNumber <<Value Object>>{
+   -Number :String
+}
+
+object VATnumber <<Value Object>>{
+   -Number :String
+}
+
+object CompanyEmail <<Value Object>>{
+-Email :String
+}
+
+
+object Status <<Value Object>>{
+-Status :String
+}
+
+
+
+object CustomerRepresentative <<Entity>>{
+-Name :String
+-CompanyPosition :String
+
+}
+
+}
+
+package "Figure " #9cffaa{
+object Figure <<Entity>> <<Root>>{
+	-description:String
+	-keywords:Set<String>
+	-figureVersion:Version
+	-author:SystemUser
+	-code:Set<String>
+	-dslVersion:Version
+    -creationDate:LocalDate
+    -isActive:boolean
+
+}
+object Version <<Value Object>>{
+ -version:String
+}
+
+
+}
+package "Drone " #ffa3a3 {
+object Drone <<Entity>> <<Root>>{
+    -RemovalDate :Date
+    -RemovalReason :String
+}
+Figure "1"<--"1" Version : dslVersion
+Figure "1"<--"1" Version : figureVersion
+
+object DroneStatus <<Value Object>>{
+ -Status :String
+}
+
+object SerialNumber <<Value Object>>{
+ -Number :String
+}
+
+object Maintenance<<Entity>>{
+    -Description :String
+}
+
+object MaintenanceDate<<Value Object>>{
+    -Date :Date
+}
+
+object MaintenanceType<<Value Object>>{
+    -Type :String
+}
+
+
+}
+package "Drone Model" #ffb5a3{
+object DroneModel <<Root>> <<Entity>>{
+ -Name :String
+}
+object Language<<Value Object>>{
+    -Name :String
+}
+
+}
+DroneModel "1"-->"1" Language
+
+
+
+package "Show Proposal" #9bc8ff{
+object ShowProposal <<Entity>> <<Root>>{
+    -Description :String
+    -AcceptanceEmailContent :String
+    -AcceptanceDate :String
+}
+
+   object SimulationReport<<Entity>>{
+    -Result :String
+    -Description :String
+    -PreviewLink :String
+    -Date :Date
+    }
+
+    object ProposalCreationDate<<Value Object>>{
+        -Date :Date
+    }
+
+    object ProposedShowDate<<Value Object>>{
+        -Date :Date
+    }
+
+    object ProposedDuration<<Value Object>>{
+        -Duration :int
+    }
+
+    object ProposedNDrones<<Value Object>>{
+        -Number :int
+    }
+    object ProposedPlace<<Value Object>>{
+        -Place :String
+    }
+
+     object ProposalStatus<<Value Object>>{
+            -Status :String
+       }
+
+}
+ShowProposal"1" --> "1" ProposalCreationDate :has
+ShowProposal"1" --> "1" ProposedDuration :has
+ShowProposal"1" --> "1" ProposedPlace :has
+ShowProposal"1" --> "1" ProposedShowDate :has
+ShowProposal"1" --> "1" ProposedNDrones :has
+ShowProposal"1" --> "1" ProposalStatus :has
+
+ShowProposal "1"-right->"0..*" SimulationReport
+
+
+
+package "Show Request" #7a91ff{
+object ShowRequest <<Entity>><<Root>>{
+    -Description :String
+}
+
+object RequestCreationDate<<Value Object>>{
+    -Date :Date
+}
+
+object RequestShowDate<<Value Object>>{
+    -Date :Date
+}
+
+object RequestDuration<<Value Object>>{
+    -Duration :int
+}
+
+object RequestNDrones<<Value Object>>{
+    -Number :int
+}
+object RequestPlace<<Value Object>>{
+    -Place :String
+}
+
+}
+
+ShowRequest "1"-->"1" RequestCreationDate :has
+ShowRequest "1"-->"1" RequestNDrones :has
+ShowRequest "1"-->"1" RequestShowDate :has
+ShowRequest "1"-->"1" RequestDuration :has
+ShowRequest "1"-->"1" RequestPlace :has
+
+
+package "Show " #9FFFff{
+object Show <<Entity>> <<Root>>{
+    -ShowDate :Date
+    -Duration :int
+}
+}
+
+package "Figure Category" #ddaddd{
+object FigureCategory <<Entity>> <<Root>>{
+    -Description :String
+}
+
+object FigureCategoryName <<Value Object>>{
+    -Name :String
+}
+
+object FigureCategoryStatus <<Value Object>>{
+    -Status :String
+}
+
+object FigureCategoryCreationDate <<Value Object>>{
+    -Date :Date
+}
+
+object FigureCategoryLastUpdateDate <<Value Object>>{
+    -Date :Date
+}
+}
+
+Figure "0..*" -up-> "1..*" FigureCategory :has
+
+FigureCategory "1" -up-> "1" FigureCategoryName :has
+FigureCategory "1" -left-> "1" FigureCategoryStatus :has
+FigureCategory "1" -right-> "1" FigureCategoryCreationDate :has
+FigureCategory "1" -up-> "1" FigureCategoryLastUpdateDate :has
+
+Customer "1"<--"0..*" Figure :contains
+
+ShowRequest "1"-left->"1..*" Figure :contains
+
+ShowProposal "1"-left->"1..*" Figure :contains
+
+Show "1"-left--->"1..*" Figure :contains
+
+ShowProposal "0..*" --> "1..*" DroneModel :contains
+
+
+
+
+
+Customer "1"--> "*"ShowRequest :contains
+
+ShowRequest "1" -down-> "*" ShowProposal :contains
+
+ShowProposal "1"-left-> "1"Show :contains
+
+DroneModel"1" -down->"0..*" Drone :contains
+
+Show "0..*"--> "1..*"DroneModel :contains
+
+Drone "1" --> "0..*" Maintenance :has
+Drone "1" -right-> "1" SerialNumber : has
+Drone "1" -->"1" DroneStatus :has
+
+Maintenance "*" -right-> "1" MaintenanceDate:has
+Maintenance "*" -down-> "1" MaintenanceType:has
+
+Customer "1" -up-> "1" Status :has
+CustomerRepresentative "1"-up->"1" Status :has
+Customer "1"-up->"1" PhoneNumber :has
+Customer "1"-up->"1" VATnumber :has
+Customer "1"-up->"1" Address :has
+Customer "1"-right-> "1" ShodroneEmail:has
+CustomerRepresentative "1"-up->"1" PhoneNumber :has
+CustomerRepresentative "1"-up->"1" CompanyEmail :has
+Customer "1" -left-> "0.*" CustomerRepresentative : has
+@enduml

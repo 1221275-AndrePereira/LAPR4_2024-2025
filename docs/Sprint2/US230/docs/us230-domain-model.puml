@@ -1,0 +1,62 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+skinparam linetype polyline
+hide empty members
+
+package "Show Request" #7a91ff {
+
+  object ShowRequest <<Entity>> <<Root>> {
+    +Long id
+    +Long version
+    +FrameworkDescription description
+    +RequestPlace place
+    +RequestCreationDate creationDate
+    +RequestShowDate showDate
+    +RequestDuration duration
+    +RequestNDrones nDrones
+    '-- Relations --
+    +ShodroneUser customer
+  }
+
+  ' Representing the EAPLI framework's Description VO (simplified)
+  object FrameworkDescription <<Value Object>> {
+     +String value
+  }
+
+  object RequestCreationDate <<Value Object>> {
+    +LocalDate date
+  }
+
+  object RequestShowDate <<Value Object>> {
+    +LocalDate date
+  }
+
+  object RequestDuration <<Value Object>> {
+    +long minutes
+  }
+
+  object RequestNDrones <<Value Object>> {
+    +int number
+  }
+
+  object RequestPlace <<Value Object>> {
+    +String description
+  }
+
+  ' External Entity (defined in another package, e.g., "Customer" or "User Management")
+  object ShodroneUser <<Entity>> <<Root>> {
+    ' Attributes of ShodroneUser
+  }
+
+}
+
+ShowRequest "1" *-- "1" FrameworkDescription : has >
+ShowRequest "1" *-- "1" RequestPlace : has >
+ShowRequest "1" *-- "1" RequestCreationDate : has >
+ShowRequest "1" *-- "1" RequestShowDate : has >
+ShowRequest "1" *-- "1" RequestDuration : has >
+ShowRequest "1" *-- "1" RequestNDrones : has >
+ShowRequest "1" -- "1" ShodroneUser : requested by >
+
+@enduml

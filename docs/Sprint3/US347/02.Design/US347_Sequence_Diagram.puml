@@ -1,0 +1,137 @@
+@startuml
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor CRMManager as Actor
+participant ":GenerateProposalDocumentUI" as UI <<presentation>>
+participant ":GenerateProposalDocumentController" as Controller <<application>>
+participant ":ShowProposalDocumentTemplate" as DocumentTemplate <<domain>>
+participant ":ShowProposal" as ShowProposal <<domain>>
+participant PersistenceContext <<framework>>
+participant RepositoryFactory <<framework>>
+participant ProposalDocumentTemplateRepository <<repository>>
+participant ShowProposalRepository <<repository>>
+participant ProposalDocumentGenerator <<plugin>>
+participant ProposalDocumentValidator <<plugin>>
+
+activate Actor
+Actor -> UI: asks to send show proposal to customer
+activate UI
+UI -> Controller**: create
+activate Controller
+
+UI --> Actor: requests the id of the show proposal and the \ntemplate id of the show proposal document \ntemplate to be sent
+deactivate UI
+Actor -> UI: provides show proposal id and proposal document template id
+activate UI
+UI -> Controller: generateProposalDocument(showProposalId, proposalDocumentTemplateId)
+
+Controller -> ShowProposalRepository: findByIdentifier(showProposalId)
+activate ShowProposalRepository
+ShowProposalRepository --> Controller: showProposal
+deactivate ShowProposalRepository
+
+Controller -> ProposalDocumentTemplateRepository: findByIdentifier(proposalDocumentTemplateId)
+activate ProposalDocumentTemplateRepository
+ProposalDocumentTemplateRepository --> Controller: proposalDocumentTemplate
+deactivate ProposalDocumentTemplateRepository
+
+Controller -> Controller: createDocumentFilePath(showProposalId)
+Controller -> ShowProposalRepository: findRequestByProposal(showProposal)
+activate ShowProposalRepository
+ShowProposalRepository --> Controller: showRequest
+deactivate ShowProposalRepository
+
+Controller -> ProposalDocumentGenerator**: create
+activate ProposalDocumentGenerator
+Controller -> ProposalDocumentGenerator: generate(content, showProposal, proposalDocumentTemplate, user)
+ProposalDocumentGenerator -> DocumentTemplate: getProposalDocumentTemplateFilePath()
+activate DocumentTemplate
+DocumentTemplate --> ProposalDocumentGenerator: filePath
+deactivate DocumentTemplate
+
+
+ProposalDocumentGenerator -> ShowProposal: getDroneModels()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: droneModels
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getFigures()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: figures
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getDuration()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: duration
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getProposedPlace()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: proposedPlace
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getInsuranceAmount()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: insuranceAmount
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getCreationDate()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: creationDate
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getProposedShowDate()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: proposedShowDate
+deactivate ShowProposal
+
+
+
+ProposalDocumentGenerator -> ShowProposal: getVideoLink()
+activate ShowProposal
+ShowProposal --> ProposalDocumentGenerator: videoLink
+deactivate ShowProposal
+
+
+ProposalDocumentGenerator -> ProposalDocumentGenerator: replacePlaceholders(content, showProposal, user)
+ProposalDocumentGenerator --> Controller: content
+deactivate ProposalDocumentGenerator
+
+Controller -> Controller: create File(documentFilePath)
+Controller -> ProposalDocumentValidator**: create
+activate ProposalDocumentValidator
+Controller -> ProposalDocumentValidator: validate(documentFilePath)
+ProposalDocumentValidator --> Controller: validationResult
+deactivate ProposalDocumentValidator
+
+
+    Controller -> ShowProposal: setProposalDocument(new ProposalDocument(documentFilePath))
+    activate ShowProposal
+    deactivate ShowProposal
+    Controller -> ShowProposalRepository: save(showProposal)
+    activate ShowProposalRepository
+    ShowProposalRepository --> Controller: saved
+    deactivate ShowProposalRepository
+    Controller --> UI: true
+    UI --> Actor: Success message
+
+
+deactivate UI
+deactivate Controller
+deactivate Actor
+
+@enduml

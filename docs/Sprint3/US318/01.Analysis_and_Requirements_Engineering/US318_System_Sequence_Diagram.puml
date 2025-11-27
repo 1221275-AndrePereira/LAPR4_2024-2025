@@ -1,0 +1,36 @@
+@startuml
+
+title <size:20>System Sequence Diagram US318</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor CRMManager as Actor
+participant ":CreateShowProposalDocumentTemplateUI" as UI <<presentation>>
+
+activate Actor
+Actor -> UI: asks to create proposal document template
+activate UI
+
+UI --> Actor: requests the name and file path of the template file
+deactivate UI
+Actor -> UI: Types name of the show proposal template, and the file path \nof the template file
+activate UI
+
+    UI-->Actor: Sucess message
+
+
+deactivate UI
+deactivate Actor
+
+
+
+
+
+@enduml

@@ -1,0 +1,119 @@
+@startuml US210_Domain_Model
+
+' Define background colors for stereotypes
+skinparam class {
+  BackgroundColor<<Entity>> Wheat
+  BackgroundColor<<Value Object>> LightBlue
+  BackgroundColor<<Aggregate Root>> LightGreen
+  BackgroundColor<<Service>> LightGrey
+  BackgroundColor<<Interface>> Khaki
+  BackgroundColor<<Repository>> LightGrey
+  BackgroundColor<<Registry>> LightGrey
+}
+
+package "Domain Model (Authentication & Authorization)" {
+
+  class SystemUser <<Entity>> {
+    + username: Username
+    + password: Password
+    + name: FullName
+    + email: EmailAddress
+    + active: boolean
+    + createdOn: Calendar
+    + deactivatedOn: Calendar
+    --
+    + SystemUser(username, password, firstName, lastName, email, roles)
+    + passwordMatches(rawPassword): boolean
+    + isActive(): boolean
+    + roles(): Set<Role>
+    + hasAny(roles): boolean
+  }
+
+  class Role <<Value Object>> {
+    + name: String
+    --
+    + static valueOf(name): Role
+  }
+
+  SystemUser "1" -- "0..*" Role : has
+
+  class Username <<Value Object>> {
+    + value: String
+  }
+  SystemUser --> Username : username
+
+  class Password <<Value Object>> {
+    - hashedPassword: String
+    --
+    + Password(hashedPassword)
+    + matches(rawPassword, encoder): boolean
+  }
+  SystemUser --> Password : password
+
+  class ShodronePasswordPolicy <<Entity>> {
+    + isSatisfiedBy(rawPassword): boolean
+  }
+  ShodronePasswordPolicy ..|> PasswordPolicy
+
+  interface PasswordPolicy <<Interface>> {
+    + isSatisfiedBy(rawPassword): boolean
+  }
+
+  interface PasswordEncoder <<Interface>> {
+    + encode(rawPassword): String
+    + matches(rawPassword, encodedPassword): boolean
+  }
+
+  class ShodroneUser <<Aggregate Root>> {
+    + vatNumber: VATNumber
+    + phoneNumber: PhoneNumber
+    + address: Address
+    --
+    + systemUser(): SystemUser
+  }
+  ShodroneUser "1" -- "1" SystemUser : uses >
+
+  class UserSession <<Value Object>> {
+    + authenticatedUser(): SystemUser
+    + sessionToken(): String
+    + loginTime(): Calendar
+  }
+
+  UserSession --> SystemUser : authenticatedUser
+}
+
+package "Application/Infrastructure Services" {
+
+  class AuthenticationService <<Service>> {
+    + authenticate(username, password, roles): Optional<UserSession>
+    + changePassword(oldPassword, newPassword): boolean
+  }
+
+  class AuthorizationService <<Service>> {
+    + ensureAuthenticatedUserHasAnyOf(roles): void
+    + hasSession(): boolean
+    + session(): Optional<UserSession>
+  }
+
+  class UserRepository <<Repository>> {
+    + ofIdentity(username): Optional<SystemUser>
+    + save(user): SystemUser
+    + findAll(): Iterable<SystemUser>
+  }
+
+  class AuthzRegistry <<Registry>> {
+    + static authenticationService(): AuthenticationService
+    + static authorizationService(): AuthorizationService
+    + static userService(): UserManagementService
+    + static configure(userRepo, passPolicy, passEncoder)
+  }
+}
+
+' Service and dependency relationships
+AuthenticationService --> UserRepository : uses
+AuthenticationService --> PasswordEncoder : uses
+AuthenticationService --> PasswordPolicy : uses
+SystemUser --> PasswordPolicy : password must satisfy
+SystemUser --> PasswordEncoder : password is encoded by
+
+@enduml

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="3 seconds">
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/application.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- Roll every day, keep 30 days -->
+			<fileNamePattern>logs/application.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- Root logger: log everything from INFO and above -->
+	<root level="info">
+		<appender-ref ref="STDOUT"/>
+		<appender-ref ref="FILE"/>
+	</root>
+
+	<!-- Log your own application with more detail -->
+	<logger name="eapli.framework" level="debug" additivity="false">
+		<appender-ref ref="STDOUT"/>
+		<appender-ref ref="FILE"/>
+	</logger>
+
+	<logger name="eapli.shodrone" level="debug" additivity="false">
+		<appender-ref ref="STDOUT"/>
+		<appender-ref ref="FILE"/>
+	</logger>
+
+	<!-- Hibernate and noisy dependencies -->
+	<logger name="org.hibernate" level="warn"/>
+	<logger name="org.hibernate.SQL" level="error"/>
+	<logger name="org.hibernate.type" level="error"/>
+	<logger name="org.hibernate.util.DTDEntityResolver" level="error"/>
+
+	<logger name="console.BaseApplication" level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FILE" />
+	</logger>
+
+</configuration>

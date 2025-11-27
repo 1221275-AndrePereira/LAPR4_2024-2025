@@ -1,0 +1,12 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as CRM
+participant "System" as S
+
+activate CRM
+CRM -> S: Initiates the process to generate drone programs for a proposal.
+activate S
+S --> CRM: Displays a message confirming the start of the generation process.
+deactivate S
+deactivate CRM
+@enduml

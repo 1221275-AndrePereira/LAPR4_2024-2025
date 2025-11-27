@@ -1,0 +1,45 @@
+@startuml
+
+title <size:20>Sequence Diagram US322</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":ListMaintenanceTypesUI" as UI <<presentation>>
+participant ":ListMaintenanceTypesController" as Controller <<application>>
+participant ":MaintenanceTypeRepository" as Repository <<repository>>
+activate Actor
+Actor -> UI: Asks to list all maintenance types
+activate UI
+    UI -> Controller**: create
+activate Controller
+
+
+
+
+    UI -> Controller: listMaintenanceTypes()
+
+        Controller -> Repository: obtainAllMaintenanceTypes()
+
+
+    activate Repository
+    Repository-->Controller: MaintenanceTypes
+    deactivate Repository
+
+
+            Controller --> UI: MaintenanceTypes
+     deactivate Controller
+
+        UI-->Actor: Shows list of maintenance types
+deactivate UI
+deactivate Actor
+
+
+@enduml

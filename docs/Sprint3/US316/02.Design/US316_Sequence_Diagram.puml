@@ -1,0 +1,64 @@
+@startuml
+
+title <size:20>Sequence Diagram US316</size>
+
+
+
+
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor CRMCollaborator as Actor
+participant ":SendShowProposalUI" as UI <<presentation>>
+participant ":SendShowProposalController" as Controller <<application>>
+participant ":ShowProposal" as Domain <<domain>>
+participant ":ShowProposalRepository" as ProposalRepository <<repository>>
+
+activate Actor
+Actor -> UI: asks to send show proposal to customer
+activate UI
+
+UI -> Controller**: create
+    activate Controller
+
+UI --> Actor: requests the id of the show proposal to \nbe sent
+deactivate UI
+
+
+Actor -> UI: provides show proposal id
+activate UI
+
+
+UI -> Controller: sendProposalToCustomer(showProposalId)
+        Controller -> ProposalRepository: findByIdentifier(showProposalId)
+
+
+    activate ProposalRepository
+    ProposalRepository-->Controller: showProposal
+    deactivate ProposalRepository
+
+
+    Controller -> Domain: sendToCustomer()
+    activate Domain
+            deactivate Domain
+
+
+Controller -> ProposalRepository: save(updatedShowProposal)
+        activate ProposalRepository
+        ProposalRepository --> Controller: updatedShowProposal
+        deactivate ProposalRepository
+    Controller --> UI: updatedShowProposal
+    deactivate Controller
+
+
+UI --> Actor: Success message
+
+deactivate UI
+deactivate Actor
+
+
+
+@enduml

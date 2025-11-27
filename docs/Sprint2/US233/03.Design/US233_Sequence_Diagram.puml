@@ -1,0 +1,171 @@
+@startuml
+autonumber
+actor "Show Designer" as SD
+
+participant ":AddFigureUI" as UI
+participant ":InputValidator" as Validator
+participant ":FileSelector" as FileSel
+participant ":ListFigureCategoriesController" as ListCatCtrl
+participant ":ListShodroneUsersController" as ListUserController
+participant ":AddFigureController" as Ctrl
+participant ":AuthorizationService" as AuthSvc
+participant ":FigureRepository" as FigRepo
+participant "categories:List<FigureCategory>" as Cats
+participant "shodroneUsers:List<ShodroneUser>" as ShodroneUsersList
+participant "selectedUser:ShodroneUser" as ExclUser
+participant "figure:Figure" as Fig
+participant "author:SystemUser" as Author
+participant "figVer:Version" as FigVersion
+participant "dslVer:Version" as DslVersion
+participant "filePath:Path" as FPath
+participant "dslCode:String" as DslCode
+
+activate SD
+SD -> UI : initiates add new figure
+activate UI
+
+UI -> Console : readNonEmptyLine("Figure Description", ...)
+Console --> UI : description
+UI -> Console : readNonEmptyLine("Keyword", ...)
+loop while more keywords
+    Console --> UI : keyword
+    UI -> YNQuestionPrompt : continueQuestion("Do you wish to add any more keywords?")
+    YNQuestionPrompt --> UI : yes/no
+    UI -> Console : readNonEmptyLine("Keyword", ...)
+end
+
+UI -> Validator : readValidInput("Figure Version: ", isValidVersion, ...)
+Validator --> UI : figureVersionString
+
+UI -> Ctrl : alreadyExist(description, figureVersionString)
+activate Ctrl
+    Ctrl -> FigRepo : findFigureByDescriptionAndVersion(description, Version.valueOf(figureVersionString))
+    activate FigRepo
+    FigRepo --> Ctrl : Optional<Figure> (existingFigure)
+    deactivate FigRepo
+Ctrl --> UI : boolean (figureExists)
+deactivate Ctrl
+
+alt figureExists
+    UI --> SD : informs figure already exists
+else not figureExists
+    UI -> FileSel : collectDslFilePathsByFilename()
+    activate FileSel
+    loop until user exits or no more files
+        FileSel -> Console : readLine("Enter DSL filename or 'exit':")
+        Console --> FileSel : dslFileNameInput
+        alt dslFileNameInput is not "exit"
+            FileSel -> FileSel : resolvePath(dslFileNameInput)
+            FileSel -> FileSel : hasAllowedExtension(resolvedPath)
+            alt file exists and has allowed extension
+                 FileSel --> FileSel : addPathToList(resolvedPath)
+                 FileSel -> Console : readNonEmptyLine("Add another DSL file? (Y/N):")
+                 Console --> FileSel : yes/no
+            else file does not exist or invalid extension
+                 FileSel --> Console : displayError("File not found or invalid extension")
+            end
+        end
+    end
+    FileSel --> UI : dslFilePaths:Set<String>
+    deactivate FileSel
+
+    UI -> ListCatCtrl : listFigureCategories()
+    activate ListCatCtrl
+    ListCatCtrl -> ":FigureCategoryCatalogue" as FigCatRepo : obtainAllFigureCategories()
+    activate FigCatRepo
+    FigCatRepo --> ListCatCtrl : allCategories:Iterable<FigureCategory>
+    deactivate FigCatRepo
+    ListCatCtrl --> UI : categories:List<FigureCategory>
+    deactivate ListCatCtrl
+
+    create Cats
+    UI -> Cats : new(categories)
+    UI -> ListPrompt : selectItemRequired("Categories", Cats)
+    activate ListPrompt
+    ListPrompt --> UI : selectedCategory1:FigureCategory
+    deactivate ListPrompt
+    UI -> UI : add selectedCategory1 to selectedCategoriesList
+
+    loop while user wants to add more categories AND categories available
+        UI -> YNQuestionPrompt : continueQuestion("Do you wish to add any more categories?")
+        YNQuestionPrompt --> UI : yes
+        UI -> ListPrompt : selectItem("Categories", remainingCategories)
+        activate ListPrompt
+        ListPrompt --> UI : Optional<selectedCategoryN:FigureCategory>
+        deactivate ListPrompt
+        alt selectedCategoryN is present
+             UI -> UI : add selectedCategoryN to selectedCategoriesList
+        else no category selected or no more categories
+             UI --> SD : informs no more categories or selection cancelled
+             break
+        end
+    end
+
+    UI -> YNQuestionPrompt : continueQuestion("Is this figure exclusive to someone?")
+    YNQuestionPrompt --> UI : isExclusive:boolean
+
+    alt isExclusive
+        UI -> Validator : readValidInput("Write the customers username", isValidUsernameRegex, ...)
+        Validator --> UI : exclusiveUsername:String
+        UI -> ListUserController : listShodroneUsers()
+        activate ListUserController
+        ListUserController -> ":ShodroneUserRepository" as ShodroneUserRepo : findAll()
+        activate ShodroneUserRepo
+        ShodroneUserRepo --> ListUserController : allShodroneUsers:Iterable<ShodroneUser>
+        deactivate ShodroneUserRepo
+        ListUserController --> UI : shodroneUsersList:List<ShodroneUser>
+        deactivate ListUserController
+
+        UI -> UI : findShodroneUserByUsername(exclusiveUsername, shodroneUsersList)
+        alt user found
+            UI -> ExclUser** : create(foundShodroneUser)
+        else user not found
+            UI --> SD : informs customer username not found
+        end
+    end
+
+    UI -> Ctrl : addFigure(description, keywords, figureVersionString, selectedCategoriesList, dslFilePaths, [ExclUser])
+    activate Ctrl
+        Ctrl -> AuthSvc : session().get().authenticatedUser()
+        activate AuthSvc
+        AuthSvc --> Ctrl : author:SystemUser
+        deactivate AuthSvc
+        create Author
+        Ctrl -> Author : <<create>>
+
+        Ctrl -> Ctrl : validateDescription(description)
+        loop for each dslFilePath in dslFilePaths
+            Ctrl -> FPath** : create(Paths.get(dslFilePath))
+            Ctrl -> Files : readString(FPath, UTF_8)
+            Files --> Ctrl : dslCodeContent:String
+            create DslCode
+            Ctrl -> DslCode : <<create>>
+            Ctrl -> Ctrl : validateDslCodeNotEmpty(dslCodeContent)
+            Ctrl -> Ctrl : extractDslVersionFromContent(dslCodeContent)
+            Ctrl --> DslVersion** : dslVersionString
+            Ctrl -> Ctrl : checkDslVersionConsistency(expectedDslVersion, dslVersionString)
+            Ctrl -> Ctrl : addDslCodeToList(dslCodeContent)
+        end
+
+        create FigVersion
+        Ctrl -> FigVersion : new(figureVersionString)
+        create DslVersion
+        Ctrl -> DslVersion : new(extractedDslVersionString)
+
+        Ctrl -> Fig** : create Figure(Author, keywords, selectedCategoriesList, description, FigVersion, dslCodesList, DslVersion, [ExclUser])
+        Ctrl -> FigRepo : save(Fig)
+        activate FigRepo
+        FigRepo --> Ctrl : savedFigure:Figure
+        deactivate FigRepo
+    Ctrl --> UI : resultFigure:Figure (or exception)
+    deactivate Ctrl
+
+    alt resultFigure is not null
+        UI --> SD : informs operation success
+    else operation failed (exception caught by UI)
+        UI --> SD : informs operation failure (e.g. "Error: DSL directory does not exist...")
+    end
+end
+deactivate UI
+deactivate SD
+@enduml

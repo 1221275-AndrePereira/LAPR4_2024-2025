@@ -1,0 +1,17 @@
+@startuml
+autonumber
+actor "CRM Collaborator" as CRM
+participant "System" as S
+
+activate CRM
+CRM -> S: Initiates adding drone models to a proposal.
+activate S
+S --> CRM: Displays list of proposals and available drone models.
+deactivate S
+
+CRM -> S: Selects proposal, drone models, and specifies quantities.
+activate S
+S --> CRM: Confirms the drone models have been added to the proposal.
+deactivate S
+deactivate CRM
+@enduml

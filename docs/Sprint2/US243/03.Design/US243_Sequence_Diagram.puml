@@ -1,0 +1,35 @@
+@startuml
+
+title <size:20>Sequence Diagram US243 - List Drones in Inventory</size>
+
+skinparam monochrome true
+skinparam packageStyle rect
+skinparam defaultFontName FG Virgil
+skinparam shadowing false
+
+actor DroneTech as Actor
+participant ":ListDronesUI" as UI <<presentation>>
+participant ":DroneInventoryController" as Controller <<application>>
+participant DroneInventoryRepository <<repository>>
+
+activate Actor
+Actor -> UI: Requests list of active drones in inventory
+activate UI
+
+    UI -> Controller: listDrones()
+    activate Controller
+
+    Controller -> DroneInventoryRepository: getActiveDrones()
+    activate DroneInventoryRepository
+    DroneInventoryRepository --> Controller: activeDronesList
+    deactivate DroneInventoryRepository
+
+    Controller --> UI: activeDronesList
+    deactivate Controller
+
+    UI --> Actor: Display list of active drones
+
+deactivate UI
+deactivate Actor
+
+@enduml

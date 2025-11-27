@@ -1,0 +1,73 @@
+@startuml
+autonumber
+actor "User" as User
+
+participant ":ListActiveFiguresUI" as UI
+participant ":ListFigureController" as Ctrl
+participant ":FigureRepository" as FigRepo
+participant "figures:List<Figure>" as FiguresList
+participant "figureToDecom:Figure" as FigToDecom
+participant "listPrompt:ListPrompt<Figure>" as ListPromptUtil
+
+
+activate User
+User -> UI : initiates list active figures
+activate UI
+
+UI -> Ctrl : listActiveFigures()
+activate Ctrl
+    Ctrl -> FigRepo : allActiveFigures()
+    activate FigRepo
+    FigRepo --> Ctrl : activeFigures:List<Figure>
+    deactivate FigRepo
+Ctrl --> UI : figures:List<Figure>
+deactivate Ctrl
+
+create FiguresList
+UI -> FiguresList : new(figures)
+UI --> User : displayFigures(FiguresList)
+
+loop while User wishes to interact
+
+    UI --> User : displayOptions ("Decommission", "Search/Reset", "Exit")
+    User -> UI : selectsOption(option)
+
+    alt option is "Decommission Figure"
+        UI -> ListPromptUtil** : create("Select a figure", FiguresList)
+        activate ListPromptUtil
+        ListPromptUtil -> UI : selectItem() : Optional<Figure>
+        deactivate ListPromptUtil
+
+        alt figure is selected
+
+            UI -> FigToDecom** : create(selectedFigureFromPrompt)
+            UI -> Ctrl : decomissionFigure(FigToDecom)
+            activate Ctrl
+                Ctrl -> FigToDecom : deActivate()
+                activate FigToDecom
+                deactivate FigToDecom
+                Ctrl -> FigRepo : save(FigToDecom)
+                activate FigRepo
+                FigRepo --> Ctrl : savedFigure:Figure
+                deactivate FigRepo
+            Ctrl --> UI : updatedFigure:Figure
+            deactivate Ctrl
+            UI -> FiguresList : remove(updatedFigure)
+            UI --> User : informs "Figure decommissioned", displayUpdatedFigures(FiguresList)
+        else no figure selected
+            UI --> User : informs "No figure selected for decommissioning"
+
+        end
+
+
+    else option is "Exit"
+        UI --> User : exiting list figures view
+        break
+
+    end
+end
+
+deactivate UI
+deactivate User
+
+@enduml
